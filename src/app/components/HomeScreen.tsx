@@ -162,6 +162,58 @@ export function HomeScreen({ userName, totalCadastros, onNavigate, onLogout }: H
           </div>
         )}
 
+        {/* Top 3 Regiões */}
+        <div className="bg-white rounded-2xl shadow-lg p-6 mb-6">
+          <div className="flex items-center mb-4">
+            <MapPin className="w-5 h-5 mr-2 text-blue-600" />
+            <h3 className="font-bold text-gray-900">Top 3 Regiões</h3>
+          </div>
+
+          <div className="space-y-4">
+            {/* Item 1 - Centro */}
+            <div>
+              <div className="flex items-center justify-between mb-1.5">
+                <span className="text-sm font-medium text-gray-700">Centro</span>
+                <span className="text-sm font-semibold text-blue-600">45 votos</span>
+              </div>
+              <div className="w-full h-2.5 bg-gray-100 rounded-full overflow-hidden">
+                <div
+                  className="h-full bg-blue-600 rounded-full transition-all"
+                  style={{ width: '80%' }}
+                ></div>
+              </div>
+            </div>
+
+            {/* Item 2 - Jardim Primavera */}
+            <div>
+              <div className="flex items-center justify-between mb-1.5">
+                <span className="text-sm font-medium text-gray-700">Jardim Primavera</span>
+                <span className="text-sm font-semibold text-blue-600">28 votos</span>
+              </div>
+              <div className="w-full h-2.5 bg-gray-100 rounded-full overflow-hidden">
+                <div
+                  className="h-full bg-blue-600 rounded-full transition-all"
+                  style={{ width: '50%' }}
+                ></div>
+              </div>
+            </div>
+
+            {/* Item 3 - Vila Nova */}
+            <div>
+              <div className="flex items-center justify-between mb-1.5">
+                <span className="text-sm font-medium text-gray-700">Vila Nova</span>
+                <span className="text-sm font-semibold text-blue-600">15 votos</span>
+              </div>
+              <div className="w-full h-2.5 bg-gray-100 rounded-full overflow-hidden">
+                <div
+                  className="h-full bg-blue-600 rounded-full transition-all"
+                  style={{ width: '30%' }}
+                ></div>
+              </div>
+            </div>
+          </div>
+        </div>
+
         {/* Agenda do Dia */}
         <div className="mb-6">
           <div className="flex items-center justify-between mb-3">
