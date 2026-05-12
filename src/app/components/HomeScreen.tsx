@@ -62,7 +62,10 @@ export function HomeScreen({ userName, totalCadastros, onNavigate, onLogout }: H
 
       {/* Cards de Estatísticas */}
       <div className="px-4 -mt-16">
-        <div className="bg-white rounded-2xl shadow-lg p-6 mb-4">
+        <button
+          onClick={() => onNavigate('list')}
+          className="w-full bg-white rounded-2xl shadow-lg p-6 mb-4 text-left transition-all hover:shadow-xl active:scale-[0.99]"
+        >
           <div className="flex items-center justify-between mb-4">
             <div>
               <p className="text-gray-600 text-sm mb-1">Eleitores cadastrados</p>
@@ -76,7 +79,7 @@ export function HomeScreen({ userName, totalCadastros, onNavigate, onLogout }: H
             <TrendingUp className="w-4 h-4 mr-1" />
             <span>+{Math.floor(totalCadastros * 0.3)} esta semana</span>
           </div>
-        </div>
+        </button>
 
         {/* Cards Secundários */}
         <div className="grid grid-cols-2 gap-4 mb-6">
@@ -266,22 +269,8 @@ export function HomeScreen({ userName, totalCadastros, onNavigate, onLogout }: H
           </div>
         </div>
 
-        {/* Ações Rápidas */}
-        <div className="space-y-3 pb-20">
-          <button
-            onClick={() => onNavigate('list')}
-            className="w-full bg-white border-2 border-gray-200 hover:border-blue-600 hover:bg-blue-50 text-gray-800 py-4 px-6 rounded-xl text-left transition-all shadow flex items-center justify-between"
-          >
-            <div className="flex items-center">
-              <Users className="w-6 h-6 text-blue-600 mr-3" />
-              <div>
-                <p className="font-semibold">Meus Contatos</p>
-                <p className="text-sm text-gray-600">Ver lista completa</p>
-              </div>
-            </div>
-            <span className="text-gray-400">→</span>
-          </button>
-        </div>
+        {/* Espaçamento inferior para o botão flutuante */}
+        <div className="pb-20"></div>
       </div>
 
       {/* Botão Flutuante - Novo Cadastro */}
