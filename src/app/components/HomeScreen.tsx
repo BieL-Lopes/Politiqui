@@ -11,7 +11,7 @@ interface Activity {
 interface HomeScreenProps {
   userName: string;
   totalCadastros: number;
-  onNavigate: (screen: 'form' | 'list') => void;
+  onNavigate: (screen: 'form' | 'list' | 'agenda') => void;
   onLogout: () => void;
 }
 
@@ -261,7 +261,7 @@ export function HomeScreen({ userName, totalCadastros, onNavigate, onLogout }: H
             ))}
 
             <button
-              onClick={() => alert('Em produção, abriria formulário de nova atividade na aba Agenda')}
+              onClick={() => onNavigate('agenda')}
               className="w-full bg-blue-50 border-2 border-blue-200 border-dashed hover:bg-blue-100 text-blue-600 py-3 px-4 rounded-xl text-sm font-semibold transition-all"
             >
               + Adicionar Nova Atividade
