@@ -34,11 +34,11 @@ const MOCK_ACTIVITIES: Activity[] = [
 ];
 
 export function HomeScreen({ userName, totalCadastros, onNavigate, onLogout }: HomeScreenProps) {
-  // Dados mockados para o gráfico de rosca
+  // Dados mockados para o gráfico de rosca (hardcoded: 1 cadastro na categoria Fortes)
   const votoData = [
-    { name: 'Fortes', value: Math.floor(totalCadastros * 0.4), color: '#16a34a' }, // green-600
-    { name: 'Médios', value: Math.floor(totalCadastros * 0.35), color: '#eab308' }, // yellow-500
-    { name: 'Fracos', value: Math.floor(totalCadastros * 0.25), color: '#dc2626' } // red-600
+    { name: 'Fortes', value: 1, color: '#16a34a' }, // green-600
+    { name: 'Médios', value: 0, color: '#eab308' }, // yellow-500
+    { name: 'Fracos', value: 0, color: '#dc2626' } // red-600
   ];
 
   return (
@@ -84,7 +84,7 @@ export function HomeScreen({ userName, totalCadastros, onNavigate, onLogout }: H
             <div className="flex items-center justify-between mb-2">
               <p className="text-gray-600 text-sm">Votos Fortes</p>
             </div>
-            <p className="text-2xl font-bold text-green-600">{Math.floor(totalCadastros * 0.4)}</p>
+            <p className="text-2xl font-bold text-green-600">{votoData[0].value}</p>
           </div>
 
           <div className="bg-white rounded-xl shadow p-4">
@@ -139,7 +139,7 @@ export function HomeScreen({ userName, totalCadastros, onNavigate, onLogout }: H
                 <div className="w-3 h-3 rounded-full bg-green-600 mr-1.5"></div>
                 <span className="text-gray-700">
                   Fortes: <span className="font-bold text-green-600">{votoData[0].value}</span>
-                  <span className="text-gray-500 ml-1">({Math.round((votoData[0].value / totalCadastros) * 100)}%)</span>
+                  <span className="text-gray-500 ml-1">({totalCadastros > 0 ? Math.round((votoData[0].value / totalCadastros) * 100) : 0}%)</span>
                 </span>
               </div>
 
@@ -147,7 +147,7 @@ export function HomeScreen({ userName, totalCadastros, onNavigate, onLogout }: H
                 <div className="w-3 h-3 rounded-full bg-yellow-500 mr-1.5"></div>
                 <span className="text-gray-700">
                   Médios: <span className="font-bold text-yellow-600">{votoData[1].value}</span>
-                  <span className="text-gray-500 ml-1">({Math.round((votoData[1].value / totalCadastros) * 100)}%)</span>
+                  <span className="text-gray-500 ml-1">({totalCadastros > 0 ? Math.round((votoData[1].value / totalCadastros) * 100) : 0}%)</span>
                 </span>
               </div>
 
@@ -155,7 +155,7 @@ export function HomeScreen({ userName, totalCadastros, onNavigate, onLogout }: H
                 <div className="w-3 h-3 rounded-full bg-red-600 mr-1.5"></div>
                 <span className="text-gray-700">
                   Fracos: <span className="font-bold text-red-600">{votoData[2].value}</span>
-                  <span className="text-gray-500 ml-1">({Math.round((votoData[2].value / totalCadastros) * 100)}%)</span>
+                  <span className="text-gray-500 ml-1">({totalCadastros > 0 ? Math.round((votoData[2].value / totalCadastros) * 100) : 0}%)</span>
                 </span>
               </div>
             </div>
