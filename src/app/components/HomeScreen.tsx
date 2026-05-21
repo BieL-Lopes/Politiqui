@@ -1,4 +1,5 @@
 import { Plus, Users, TrendingUp, MapPin, LogOut, Clock, Calendar, PieChart } from 'lucide-react';
+import { UserRole, getPermissions, ROLE_LABELS } from '../lib/rbac';
 
 interface Activity {
   id: string;
@@ -13,6 +14,7 @@ interface HomeScreenProps {
   totalCadastros: number;
   onNavigate: (screen: 'form' | 'list' | 'agenda') => void;
   onLogout: () => void;
+  userRole: UserRole;
 }
 
 // Atividades mockadas para demonstração
@@ -33,7 +35,9 @@ const MOCK_ACTIVITIES: Activity[] = [
   }
 ];
 
-export function HomeScreen({ userName, totalCadastros, onNavigate, onLogout }: HomeScreenProps) {
+export function HomeScreen({ userName, totalCadastros, onNavigate, onLogout, userRole }: HomeScreenProps) {
+  const permissions = getPermissions(userRole);
+  
   // Dados mockados para o gráfico de rosca (hardcoded: 1 cadastro na categoria Fortes)
   const votoData = [
     { name: 'Fortes', value: 1, color: '#16a34a' }, // green-600
@@ -49,6 +53,9 @@ export function HomeScreen({ userName, totalCadastros, onNavigate, onLogout }: H
           <div>
             <h2 className="text-sm opacity-90 mb-1">Bem-vindo(a),</h2>
             <h1 className="text-2xl font-bold">{userName}</h1>
+            <span className="text-xs bg-blue-500 px-2 py-0.5 rounded-full mt-1 inline-block">
+              {ROLE_LABELS[userRole]}
+            </span>
           </div>
           <button
             onClick={onLogout}
@@ -273,14 +280,16 @@ export function HomeScreen({ userName, totalCadastros, onNavigate, onLogout }: H
         <div className="pb-20"></div>
       </div>
 
-      {/* Botão Flutuante - Novo Cadastro */}
-      <button
-        onClick={() => onNavigate('form')}
-        className="fixed bottom-24 right-6 w-14 h-14 bg-blue-600 hover:bg-blue-700 text-white rounded-full shadow-2xl flex items-center justify-center transition-all hover:scale-110 active:scale-95 z-40"
-        aria-label="Novo Cadastro"
-      >
-        <Plus className="w-7 h-7" strokeWidth={3} />
-      </button>
+      {/* Botao Flutuante - Novo Cadastro (apenas se tiver permissao) */}
+      {permissions.canCreateElector && (
+        <button
+          onClick={() => onNavigate('form')}
+          className="fixed bottom-24 right-6 w-14 h-14 bg-blue-600 hover:bg-blue-700 text-white rounded-full shadow-2xl flex items-center justify-center transition-all hover:scale-110 active:scale-95 z-40"
+          aria-label="Novo Cadastro"
+        >
+          <Plus className="w-7 h-7" strokeWidth={3} />
+        </button>
+      )}
     </div>
   );
 }

@@ -5,7 +5,7 @@ import { ElectorData } from './CaptureForm';
 interface ContactListProps {
   contacts: ElectorData[];
   onBack: () => void;
-  onDelete: (id: string) => void;
+  onDelete?: (id: string) => void;
   onViewProfile: (elector: ElectorData) => void;
 }
 
@@ -277,18 +277,20 @@ export function ContactList({ contacts, onBack, onDelete, onViewProfile }: Conta
                     </div>
                   )}
                 </div>
-                <button
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    if (confirm(`Deseja realmente excluir ${contact.nome}?`)) {
-                      onDelete(contact.id);
-                    }
-                  }}
-                  className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
-                  aria-label="Excluir contato"
-                >
-                  <Trash2 className="w-5 h-5" />
-                </button>
+                {onDelete && (
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      if (confirm(`Deseja realmente excluir ${contact.nome}?`)) {
+                        onDelete(contact.id);
+                      }
+                    }}
+                    className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                    aria-label="Excluir contato"
+                  >
+                    <Trash2 className="w-5 h-5" />
+                  </button>
+                )}
               </div>
 
               <div className="space-y-2 text-sm text-gray-700">
