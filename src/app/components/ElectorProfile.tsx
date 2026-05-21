@@ -1,14 +1,15 @@
 import { useState } from 'react';
-import { ArrowLeft, Phone, MapPin, Calendar, Navigation, Tag, Award, Plus, FileText, Users as UsersIcon, Trash2, Clock } from 'lucide-react';
+import { ArrowLeft, Phone, MapPin, Calendar, Navigation, Tag, Award, Plus, FileText, Users as UsersIcon, Trash2, Clock, BookOpen, UserCheck, Edit2 } from 'lucide-react';
 import { ElectorData, Atendimento } from './CaptureForm';
 
 interface ElectorProfileProps {
   elector: ElectorData;
   onBack: () => void;
   onUpdate: (updatedElector: ElectorData) => void;
+  onEdit?: (elector: ElectorData) => void;
 }
 
-export function ElectorProfile({ elector, onBack, onUpdate }: ElectorProfileProps) {
+export function ElectorProfile({ elector, onBack, onUpdate, onEdit }: ElectorProfileProps) {
   const [activeTab, setActiveTab] = useState<'atendimentos' | 'atividades'>('atendimentos');
   const [showNewAtendimento, setShowNewAtendimento] = useState(false);
   const [atendimentoDescricao, setAtendimentoDescricao] = useState('');
@@ -106,14 +107,25 @@ export function ElectorProfile({ elector, onBack, onUpdate }: ElectorProfileProp
     <div className="min-h-screen bg-gray-50">
       {/* Header */}
       <div className="bg-blue-600 text-white p-4 sticky top-0 z-10 shadow-lg">
-        <div className="flex items-center">
-          <button
-            onClick={onBack}
-            className="mr-3 p-2 hover:bg-blue-700 rounded-lg transition-colors"
-          >
-            <ArrowLeft className="w-6 h-6" />
-          </button>
-          <h1 className="text-xl font-bold">Perfil do Eleitor</h1>
+        <div className="flex items-center justify-between">
+          <div className="flex items-center">
+            <button
+              onClick={onBack}
+              className="mr-3 p-2 hover:bg-blue-700 rounded-lg transition-colors"
+            >
+              <ArrowLeft className="w-6 h-6" />
+            </button>
+            <h1 className="text-xl font-bold">Perfil do Eleitor</h1>
+          </div>
+          {onEdit && (
+            <button
+              onClick={() => onEdit(elector)}
+              className="p-2 hover:bg-blue-700 rounded-lg transition-colors"
+              title="Editar eleitor"
+            >
+              <Edit2 className="w-5 h-5" />
+            </button>
+          )}
         </div>
       </div>
 
@@ -150,6 +162,13 @@ export function ElectorProfile({ elector, onBack, onUpdate }: ElectorProfileProp
               <span>{elector.bairro ? `${elector.bairro}, ` : ''}{elector.cidade}</span>
             </div>
 
+            {elector.tituloEleitor && (
+              <div className="flex items-center text-gray-700">
+                <BookOpen className="w-4 h-4 mr-3 text-blue-600" />
+                <span>Título de Eleitor: <span className="font-mono font-semibold">{elector.tituloEleitor}</span></span>
+              </div>
+            )}
+
             {elector.dataNascimento && (
               <div className="flex items-center text-gray-700">
                 <Calendar className="w-4 h-4 mr-3 text-blue-600" />
@@ -162,6 +181,15 @@ export function ElectorProfile({ elector, onBack, onUpdate }: ElectorProfileProp
                 <Navigation className="w-4 h-4 mr-3 text-blue-600" />
                 <span className="text-xs">
                   GPS: {elector.gpsLatitude.toFixed(6)}, {elector.gpsLongitude.toFixed(6)}
+                </span>
+              </div>
+            )}
+
+            {elector.createdByName && elector.createdByName !== 'Desconhecido' && (
+              <div className="flex items-center text-gray-500 text-xs border-t border-gray-100 pt-2 mt-2">
+                <UserCheck className="w-4 h-4 mr-3 text-gray-400" />
+                <span>Cadastrado por <span className="font-medium">{elector.createdByName}</span>
+                  {elector.regiao ? ` — ${elector.regiao}` : ''}
                 </span>
               </div>
             )}

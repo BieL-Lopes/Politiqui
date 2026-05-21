@@ -1,33 +1,33 @@
 import { useState } from 'react';
-import { User, Lock, Eye, EyeOff, ChevronDown } from 'lucide-react';
-import { UserRole, ROLE_LABELS } from '../lib/rbac';
+import { User as UserIcon, Lock, Eye, EyeOff } from 'lucide-react';
+import { User, authenticateMock } from '../lib/auth';
 
 interface LoginScreenProps {
-  onLogin: (user: { name: string; role: UserRole }) => void;
+  onLogin: (user: User) => void;
 }
 
 export function LoginScreen({ onLogin }: LoginScreenProps) {
   const [showPassword, setShowPassword] = useState(false);
   const [cpf, setCpf] = useState('');
   const [password, setPassword] = useState('');
-  const [selectedRole, setSelectedRole] = useState<UserRole>('captador_votos');
   const [error, setError] = useState('');
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
 
-    // Mock authentication - aceita qualquer CPF/senha
     if (!cpf || !password) {
       setError('Preencha todos os campos');
       return;
     }
 
-    // Simula login bem-sucedido com o papel selecionado
-    onLogin({
-      name: 'Victor',
-      role: selectedRole
-    });
+    const user = authenticateMock(cpf, password);
+    if (!user) {
+      setError('CPF/e-mail ou senha incorretos');
+      return;
+    }
+
+    onLogin(user);
   };
 
   return (
@@ -37,7 +37,7 @@ export function LoginScreen({ onLogin }: LoginScreenProps) {
           {/* Logo/Título */}
           <div className="text-center mb-8">
             <div className="w-20 h-20 bg-blue-600 rounded-full mx-auto mb-4 flex items-center justify-center">
-              <User className="w-10 h-10 text-white" />
+              <UserIcon className="w-10 h-10 text-white" />
             </div>
             <h1 className="text-3xl font-bold text-gray-900 mb-2">POLITIQUI</h1>
             <p className="text-gray-600">Sistema de Captação de Eleitores</p>
@@ -50,13 +50,14 @@ export function LoginScreen({ onLogin }: LoginScreenProps) {
                 CPF ou E-mail
               </label>
               <div className="relative">
-                <User className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+                <UserIcon className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
                 <input
                   type="text"
                   value={cpf}
                   onChange={(e) => setCpf(e.target.value)}
                   className="w-full pl-12 pr-4 py-4 text-lg border-2 border-gray-300 rounded-xl focus:border-blue-600 focus:outline-none transition-colors"
-                  placeholder="Digite seu CPF ou e-mail"
+                  placeholder="CPF ou e-mail"
+                  autoComplete="username"
                 />
               </div>
             </div>
@@ -73,7 +74,8 @@ export function LoginScreen({ onLogin }: LoginScreenProps) {
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   className="w-full pl-12 pr-12 py-4 text-lg border-2 border-gray-300 rounded-xl focus:border-blue-600 focus:outline-none transition-colors"
-                  placeholder="Digite sua senha"
+                  placeholder="Senha"
+                  autoComplete="current-password"
                 />
                 <button
                   type="button"
@@ -82,27 +84,6 @@ export function LoginScreen({ onLogin }: LoginScreenProps) {
                 >
                   {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
                 </button>
-              </div>
-            </div>
-
-            {/* Selecao de Papel (Demo) */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Perfil de Acesso (Demo)
-              </label>
-              <div className="relative">
-                <ChevronDown className="absolute right-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400 pointer-events-none" />
-                <select
-                  value={selectedRole}
-                  onChange={(e) => setSelectedRole(e.target.value as UserRole)}
-                  className="w-full px-4 py-4 text-lg border-2 border-gray-300 rounded-xl focus:border-blue-600 focus:outline-none transition-colors appearance-none bg-white"
-                >
-                  {(Object.keys(ROLE_LABELS) as UserRole[]).map((role) => (
-                    <option key={role} value={role}>
-                      {ROLE_LABELS[role]}
-                    </option>
-                  ))}
-                </select>
               </div>
             </div>
 
@@ -131,13 +112,6 @@ export function LoginScreen({ onLogin }: LoginScreenProps) {
               </button>
             </div>
           </form>
-
-          {/* Info de Demo */}
-          <div className="mt-6 p-4 bg-blue-50 rounded-xl">
-            <p className="text-xs text-blue-800 text-center">
-              <strong>MODO DEMONSTRACAO:</strong> Selecione um perfil para testar diferentes niveis de acesso
-            </p>
-          </div>
         </div>
       </div>
     </div>

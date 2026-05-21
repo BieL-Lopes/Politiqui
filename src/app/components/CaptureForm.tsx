@@ -25,11 +25,16 @@ export interface ElectorData {
   observacoes: string;
   dataCadastro: string;
   atendimentos: Atendimento[];
+  createdBy?: string;       // id do captador responsavel
+  createdByName?: string;   // nome desnormalizado para exibicao rapida
+  regiao?: string;          // herdada do captador no momento do cadastro
 }
 
 interface CaptureFormProps {
   onBack: () => void;
   onSave: (elector: Omit<ElectorData, 'id' | 'dataCadastro' | 'atendimentos'>) => void;
+  electorToEdit?: ElectorData;
+  onUpdate?: (elector: ElectorData) => void;
 }
 
 const NICHOS_DISPONIVEIS = [
@@ -45,25 +50,27 @@ const NICHOS_DISPONIVEIS = [
   'Assistência Social'
 ];
 
-export function CaptureForm({ onBack, onSave }: CaptureFormProps) {
-  const [nome, setNome] = useState('');
-  const [whatsapp, setWhatsapp] = useState('');
-  const [tituloEleitor, setTituloEleitor] = useState('');
-  const [dataNascimento, setDataNascimento] = useState('');
-  const [bairro, setBairro] = useState('');
-  const [cidade, setCidade] = useState('');
-  const [nivelVoto, setNivelVoto] = useState<'forte' | 'medio' | 'fraco' | ''>('');
-  const [nivelEngajamento, setNivelEngajamento] = useState<'lideranca' | 'cabo_eleitoral' | 'eleitor_comum' | ''>('');
-  const [nichos, setNichos] = useState<string[]>([]);
-  const [gpsLatitude, setGpsLatitude] = useState<number | undefined>();
-  const [gpsLongitude, setGpsLongitude] = useState<number | undefined>();
-  const [aceitaWhatsapp, setAceitaWhatsapp] = useState(false);
-  const [observacoes, setObservacoes] = useState('');
+export function CaptureForm({ onBack, onSave, electorToEdit, onUpdate }: CaptureFormProps) {
+  const [nome, setNome] = useState(electorToEdit?.nome ?? '');
+  const [whatsapp, setWhatsapp] = useState(electorToEdit?.whatsapp ?? '');
+  const [tituloEleitor, setTituloEleitor] = useState(electorToEdit?.tituloEleitor ?? '');
+  const [dataNascimento, setDataNascimento] = useState(electorToEdit?.dataNascimento ?? '');
+  const [bairro, setBairro] = useState(electorToEdit?.bairro ?? '');
+  const [cidade, setCidade] = useState(electorToEdit?.cidade ?? '');
+  const [nivelVoto, setNivelVoto] = useState<'forte' | 'medio' | 'fraco' | ''>(electorToEdit?.nivelVoto ?? '');
+  const [nivelEngajamento, setNivelEngajamento] = useState<'lideranca' | 'cabo_eleitoral' | 'eleitor_comum' | ''>(electorToEdit?.nivelEngajamento ?? '');
+  const [nichos, setNichos] = useState<string[]>(electorToEdit?.nichos ?? []);
+  const [gpsLatitude, setGpsLatitude] = useState<number | undefined>(electorToEdit?.gpsLatitude ?? undefined);
+  const [gpsLongitude, setGpsLongitude] = useState<number | undefined>(electorToEdit?.gpsLongitude ?? undefined);
+  const [aceitaWhatsapp, setAceitaWhatsapp] = useState(electorToEdit?.aceitaWhatsapp ?? false);
+  const [observacoes, setObservacoes] = useState(electorToEdit?.observacoes ?? '');
   const [capturandoGps, setCapturandoGps] = useState(false);
 
-  // Captura GPS automaticamente ao carregar o formulário
+  // Captura GPS automaticamente apenas no modo criacao
   useEffect(() => {
-    captureGPS();
+    if (!electorToEdit) {
+      captureGPS();
+    }
   }, []);
 
   const captureGPS = () => {
@@ -134,7 +141,12 @@ export function CaptureForm({ onBack, onSave }: CaptureFormProps) {
       return;
     }
 
-    onSave({
+    if (tituloEleitor && tituloEleitor.replace(/\D/g, '').length !== 12) {
+      alert('Título de Eleitor inválido. Deve conter exatamente 12 dígitos.');
+      return;
+    }
+
+    const formData = {
       nome,
       whatsapp,
       tituloEleitor,
@@ -148,21 +160,26 @@ export function CaptureForm({ onBack, onSave }: CaptureFormProps) {
       gpsLongitude,
       aceitaWhatsapp,
       observacoes
-    });
+    };
 
-    // Limpa o formulário
-    setNome('');
-    setWhatsapp('');
-    setTituloEleitor('');
-    setDataNascimento('');
-    setBairro('');
-    setCidade('');
-    setNivelVoto('');
-    setNivelEngajamento('');
-    setNichos([]);
-    setAceitaWhatsapp(false);
-    setObservacoes('');
-    captureGPS(); // Recaptura GPS para próximo cadastro
+    if (electorToEdit && onUpdate) {
+      onUpdate({ ...electorToEdit, ...formData });
+    } else {
+      onSave(formData);
+      // Limpa o formulario apenas no modo criacao
+      setNome('');
+      setWhatsapp('');
+      setTituloEleitor('');
+      setDataNascimento('');
+      setBairro('');
+      setCidade('');
+      setNivelVoto('');
+      setNivelEngajamento('');
+      setNichos([]);
+      setAceitaWhatsapp(false);
+      setObservacoes('');
+      captureGPS();
+    }
   };
 
   return (
@@ -176,7 +193,7 @@ export function CaptureForm({ onBack, onSave }: CaptureFormProps) {
           >
             <ArrowLeft className="w-6 h-6" />
           </button>
-          <h1 className="text-xl font-bold">Novo Cadastro</h1>
+          <h1 className="text-xl font-bold">{electorToEdit ? 'Editar Cadastro' : 'Novo Cadastro'}</h1>
         </div>
       </div>
 
@@ -467,7 +484,7 @@ export function CaptureForm({ onBack, onSave }: CaptureFormProps) {
             className="w-full bg-blue-600 hover:bg-blue-700 text-white py-4 rounded-xl text-lg font-bold shadow-lg flex items-center justify-center transition-all active:scale-95"
           >
             <Save className="w-6 h-6 mr-2" />
-            Salvar Cadastro
+            {electorToEdit ? 'Salvar Alterações' : 'Salvar Cadastro'}
           </button>
         </div>
       </form>

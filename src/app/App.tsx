@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { LoginScreen } from './components/LoginScreen';
 import { HomeScreen } from './components/HomeScreen';
 import { CaptureForm, ElectorData } from './components/CaptureForm';
@@ -12,13 +12,9 @@ import { BottomNav } from './components/BottomNav';
 import { toast } from 'sonner';
 import { Toaster } from 'sonner';
 import { UserRole, Tab, getAllowedTabs, getPermissions, ROLE_LABELS } from './lib/rbac';
+import { User } from './lib/auth';
 
 type Screen = 'login' | 'home' | 'form' | 'list' | 'profile' | 'agenda' | 'polls' | 'coordination' | 'admin';
-
-interface User {
-  name: string;
-  role: UserRole;
-}
 
 export default function App() {
   const [currentScreen, setCurrentScreen] = useState<Screen>('login');
@@ -26,6 +22,8 @@ export default function App() {
   const [user, setUser] = useState<User | null>(null);
   const [electors, setElectors] = useState<ElectorData[]>([]);
   const [selectedElector, setSelectedElector] = useState<ElectorData | null>(null);
+  const [electorToEdit, setElectorToEdit] = useState<ElectorData | null>(null);
+  const isFirstRender = useRef(true);
 
   // Carrega dados do localStorage na inicialização
   useEffect(() => {
@@ -38,15 +36,24 @@ export default function App() {
     }
 
     if (savedElectors) {
-      setElectors(JSON.parse(savedElectors));
+      const parsed: ElectorData[] = JSON.parse(savedElectors);
+      // Migra registros antigos adicionando campos ausentes com valores padrao
+      const migrated = parsed.map(e => ({
+        createdBy: 'desconhecido',
+        createdByName: 'Desconhecido',
+        ...e
+      }));
+      setElectors(migrated);
     }
   }, []);
 
-  // Salva eleitores no localStorage sempre que mudar
+  // Salva eleitores no localStorage sempre que mudar (incluindo lista vazia)
   useEffect(() => {
-    if (electors.length > 0) {
-      localStorage.setItem('politiqui_electors', JSON.stringify(electors));
+    if (isFirstRender.current) {
+      isFirstRender.current = false;
+      return;
     }
+    localStorage.setItem('politiqui_electors', JSON.stringify(electors));
   }, [electors]);
 
   const handleLogin = (userData: User) => {
@@ -88,7 +95,10 @@ export default function App() {
       ...electorData,
       id: `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
       dataCadastro: new Date().toISOString(),
-      atendimentos: []
+      atendimentos: [],
+      createdBy: user?.id ?? 'desconhecido',
+      createdByName: user?.name ?? 'Desconhecido',
+      regiao: user?.regiao ?? electorData.regiao
     };
 
     setElectors(prev => [newElector, ...prev]);
@@ -110,6 +120,19 @@ export default function App() {
     setElectors(prev => prev.map(e => e.id === updatedElector.id ? updatedElector : e));
     setSelectedElector(updatedElector);
     toast.success('Atendimento registrado!');
+  };
+
+  const handleEditElector = (elector: ElectorData) => {
+    setElectorToEdit(elector);
+    setCurrentScreen('form');
+  };
+
+  const handleSaveEditedElector = (updatedElector: ElectorData) => {
+    setElectors(prev => prev.map(e => e.id === updatedElector.id ? updatedElector : e));
+    setSelectedElector(updatedElector);
+    setElectorToEdit(null);
+    setCurrentScreen('profile');
+    toast.success('✅ Eleitor atualizado com sucesso!');
   };
 
   const handleLogout = () => {
@@ -141,10 +164,13 @@ export default function App() {
       <>
         <CaptureForm
           onBack={() => {
-            setCurrentScreen('home');
-            setCurrentTab('home');
+            setElectorToEdit(null);
+            setCurrentScreen(electorToEdit ? 'profile' : 'home');
+            setCurrentTab(electorToEdit ? 'contacts' : 'home');
           }}
           onSave={handleSaveElector}
+          electorToEdit={electorToEdit ?? undefined}
+          onUpdate={handleSaveEditedElector}
         />
         <Toaster position="top-center" richColors />
       </>
@@ -161,6 +187,7 @@ export default function App() {
             setCurrentTab('contacts');
           }}
           onUpdate={handleUpdateElector}
+          onEdit={userPermissions?.canCreateElector ? handleEditElector : undefined}
         />
         <Toaster position="top-center" richColors />
       </>
