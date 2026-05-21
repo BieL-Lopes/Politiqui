@@ -76,16 +76,19 @@ export const ROLE_PERMISSIONS: Record<UserRole, {
 };
 
 // Funcao para verificar se um papel tem acesso a uma tab
-export function canAccessTab(role: UserRole, tab: Tab): boolean {
-  return ROLE_PERMISSIONS[role].tabs.includes(tab);
+export function canAccessTab(role: UserRole | undefined, tab: Tab): boolean {
+  const safeRole = role || 'eleitor';
+  return ROLE_PERMISSIONS[safeRole]?.tabs?.includes(tab) ?? false;
 }
 
 // Funcao para obter as tabs permitidas para um papel
-export function getAllowedTabs(role: UserRole): Tab[] {
-  return ROLE_PERMISSIONS[role].tabs;
+export function getAllowedTabs(role: UserRole | undefined): Tab[] {
+  const safeRole = role || 'eleitor';
+  return ROLE_PERMISSIONS[safeRole]?.tabs ?? ['home'];
 }
 
 // Funcao para obter permissoes de um papel
-export function getPermissions(role: UserRole) {
-  return ROLE_PERMISSIONS[role];
+export function getPermissions(role: UserRole | undefined) {
+  const safeRole = role || 'eleitor';
+  return ROLE_PERMISSIONS[safeRole] ?? ROLE_PERMISSIONS.eleitor;
 }
