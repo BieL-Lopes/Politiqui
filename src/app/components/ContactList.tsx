@@ -36,15 +36,15 @@ export function ContactList({ contacts, onBack, onDelete, onViewProfile }: Conta
     );
   };
 
-  const getNivelEngajamentoBadge = (nivel: 'lideranca' | 'apoiador' | 'eleitor_comum') => {
+  const getNivelEngajamentoBadge = (nivel: 'lideranca' | 'cabo_eleitoral' | 'eleitor_comum') => {
     const styles = {
       lideranca: 'bg-purple-100 text-purple-800 border-purple-300',
-      apoiador: 'bg-blue-100 text-blue-800 border-blue-300',
+      cabo_eleitoral: 'bg-blue-100 text-blue-800 border-blue-300',
       eleitor_comum: 'bg-gray-100 text-gray-800 border-gray-300'
     };
     const labels = {
       lideranca: '⭐ Liderança',
-      apoiador: '👥 Apoiador',
+      cabo_eleitoral: '👥 Cabo Eleitoral',
       eleitor_comum: '👤 Eleitor'
     };
     return (

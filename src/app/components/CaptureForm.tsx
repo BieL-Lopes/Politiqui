@@ -12,11 +12,12 @@ export interface ElectorData {
   id: string;
   nome: string;
   whatsapp: string;
+  tituloEleitor: string;
   dataNascimento: string;
   bairro: string;
   cidade: string;
   nivelVoto: 'forte' | 'medio' | 'fraco';
-  nivelEngajamento: 'lideranca' | 'apoiador' | 'eleitor_comum';
+  nivelEngajamento: 'lideranca' | 'cabo_eleitoral' | 'eleitor_comum';
   nichos: string[];
   gpsLatitude?: number;
   gpsLongitude?: number;
@@ -47,11 +48,12 @@ const NICHOS_DISPONIVEIS = [
 export function CaptureForm({ onBack, onSave }: CaptureFormProps) {
   const [nome, setNome] = useState('');
   const [whatsapp, setWhatsapp] = useState('');
+  const [tituloEleitor, setTituloEleitor] = useState('');
   const [dataNascimento, setDataNascimento] = useState('');
   const [bairro, setBairro] = useState('');
   const [cidade, setCidade] = useState('');
   const [nivelVoto, setNivelVoto] = useState<'forte' | 'medio' | 'fraco' | ''>('');
-  const [nivelEngajamento, setNivelEngajamento] = useState<'lideranca' | 'apoiador' | 'eleitor_comum' | ''>('');
+  const [nivelEngajamento, setNivelEngajamento] = useState<'lideranca' | 'cabo_eleitoral' | 'eleitor_comum' | ''>('');
   const [nichos, setNichos] = useState<string[]>([]);
   const [gpsLatitude, setGpsLatitude] = useState<number | undefined>();
   const [gpsLongitude, setGpsLongitude] = useState<number | undefined>();
@@ -111,6 +113,19 @@ export function CaptureForm({ onBack, onSave }: CaptureFormProps) {
     setWhatsapp(formatted);
   };
 
+  const handleTituloEleitorChange = (value: string) => {
+    // Remove tudo que não é número
+    const numbers = value.replace(/\D/g, '');
+    // Formata XXXX XXXX XXXX (12 dígitos)
+    let formatted = numbers;
+    if (numbers.length > 8) {
+      formatted = `${numbers.slice(0, 4)} ${numbers.slice(4, 8)} ${numbers.slice(8, 12)}`;
+    } else if (numbers.length > 4) {
+      formatted = `${numbers.slice(0, 4)} ${numbers.slice(4, 8)}`;
+    }
+    setTituloEleitor(formatted);
+  };
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
 
@@ -122,11 +137,12 @@ export function CaptureForm({ onBack, onSave }: CaptureFormProps) {
     onSave({
       nome,
       whatsapp,
+      tituloEleitor,
       dataNascimento,
       bairro,
       cidade,
       nivelVoto: nivelVoto as 'forte' | 'medio' | 'fraco',
-      nivelEngajamento: nivelEngajamento as 'lideranca' | 'apoiador' | 'eleitor_comum',
+      nivelEngajamento: nivelEngajamento as 'lideranca' | 'cabo_eleitoral' | 'eleitor_comum',
       nichos,
       gpsLatitude,
       gpsLongitude,
@@ -137,6 +153,7 @@ export function CaptureForm({ onBack, onSave }: CaptureFormProps) {
     // Limpa o formulário
     setNome('');
     setWhatsapp('');
+    setTituloEleitor('');
     setDataNascimento('');
     setBairro('');
     setCidade('');
@@ -216,6 +233,20 @@ export function CaptureForm({ onBack, onSave }: CaptureFormProps) {
                 className="w-full pl-11 pr-4 py-3 text-lg border-2 border-gray-300 rounded-lg focus:border-blue-600 focus:outline-none"
               />
             </div>
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Titulo de Eleitor
+            </label>
+            <input
+              type="text"
+              value={tituloEleitor}
+              onChange={(e) => handleTituloEleitorChange(e.target.value)}
+              className="w-full px-4 py-3 text-lg border-2 border-gray-300 rounded-lg focus:border-blue-600 focus:outline-none"
+              placeholder="0000 0000 0000"
+              maxLength={14}
+            />
           </div>
         </div>
 
@@ -319,14 +350,14 @@ export function CaptureForm({ onBack, onSave }: CaptureFormProps) {
 
             <button
               type="button"
-              onClick={() => setNivelEngajamento('apoiador')}
+              onClick={() => setNivelEngajamento('cabo_eleitoral')}
               className={`py-3 px-5 rounded-lg font-semibold transition-all border-2 ${
-                nivelEngajamento === 'apoiador'
+                nivelEngajamento === 'cabo_eleitoral'
                   ? 'bg-blue-600 text-white border-blue-700 shadow-lg'
                   : 'bg-blue-50 text-blue-700 border-blue-200 hover:bg-blue-100'
               }`}
             >
-              👥 Apoiador Ativo
+              👥 Cabo Eleitoral
             </button>
 
             <button
