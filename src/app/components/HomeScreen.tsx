@@ -1,4 +1,5 @@
 import { Plus, Users, TrendingUp, MapPin, LogOut, Clock, Calendar, PieChart } from 'lucide-react';
+import { UserRole, getPermissions, ROLE_LABELS } from '../lib/rbac';
 
 interface Activity {
   id: string;
@@ -11,8 +12,9 @@ interface Activity {
 interface HomeScreenProps {
   userName: string;
   totalCadastros: number;
-  onNavigate: (screen: 'form' | 'list') => void;
+  onNavigate: (screen: 'form' | 'list' | 'agenda') => void;
   onLogout: () => void;
+  userRole: UserRole;
 }
 
 // Atividades mockadas para demonstração
@@ -33,12 +35,14 @@ const MOCK_ACTIVITIES: Activity[] = [
   }
 ];
 
-export function HomeScreen({ userName, totalCadastros, onNavigate, onLogout }: HomeScreenProps) {
-  // Dados mockados para o gráfico de rosca
+export function HomeScreen({ userName, totalCadastros, onNavigate, onLogout, userRole }: HomeScreenProps) {
+  const permissions = getPermissions(userRole);
+  
+  // Dados mockados para o gráfico de rosca (hardcoded: 1 cadastro na categoria Fortes)
   const votoData = [
-    { name: 'Fortes', value: Math.floor(totalCadastros * 0.4), color: '#16a34a' }, // green-600
-    { name: 'Médios', value: Math.floor(totalCadastros * 0.35), color: '#eab308' }, // yellow-500
-    { name: 'Fracos', value: Math.floor(totalCadastros * 0.25), color: '#dc2626' } // red-600
+    { name: 'Fortes', value: 1, color: '#16a34a' }, // green-600
+    { name: 'Médios', value: 0, color: '#eab308' }, // yellow-500
+    { name: 'Fracos', value: 0, color: '#dc2626' } // red-600
   ];
 
   return (
@@ -49,6 +53,9 @@ export function HomeScreen({ userName, totalCadastros, onNavigate, onLogout }: H
           <div>
             <h2 className="text-sm opacity-90 mb-1">Bem-vindo(a),</h2>
             <h1 className="text-2xl font-bold">{userName}</h1>
+            <span className="text-xs bg-blue-500 px-2 py-0.5 rounded-full mt-1 inline-block">
+              {ROLE_LABELS[userRole]}
+            </span>
           </div>
           <button
             onClick={onLogout}
@@ -62,7 +69,10 @@ export function HomeScreen({ userName, totalCadastros, onNavigate, onLogout }: H
 
       {/* Cards de Estatísticas */}
       <div className="px-4 -mt-16">
-        <div className="bg-white rounded-2xl shadow-lg p-6 mb-4">
+        <button
+          onClick={() => onNavigate('list')}
+          className="w-full bg-white rounded-2xl shadow-lg p-6 mb-4 text-left transition-all hover:shadow-xl active:scale-[0.99]"
+        >
           <div className="flex items-center justify-between mb-4">
             <div>
               <p className="text-gray-600 text-sm mb-1">Eleitores cadastrados</p>
@@ -76,7 +86,7 @@ export function HomeScreen({ userName, totalCadastros, onNavigate, onLogout }: H
             <TrendingUp className="w-4 h-4 mr-1" />
             <span>+{Math.floor(totalCadastros * 0.3)} esta semana</span>
           </div>
-        </div>
+        </button>
 
         {/* Cards Secundários */}
         <div className="grid grid-cols-2 gap-4 mb-6">
@@ -84,7 +94,7 @@ export function HomeScreen({ userName, totalCadastros, onNavigate, onLogout }: H
             <div className="flex items-center justify-between mb-2">
               <p className="text-gray-600 text-sm">Votos Fortes</p>
             </div>
-            <p className="text-2xl font-bold text-green-600">{Math.floor(totalCadastros * 0.4)}</p>
+            <p className="text-2xl font-bold text-green-600">{votoData[0].value}</p>
           </div>
 
           <div className="bg-white rounded-xl shadow p-4">
@@ -139,7 +149,7 @@ export function HomeScreen({ userName, totalCadastros, onNavigate, onLogout }: H
                 <div className="w-3 h-3 rounded-full bg-green-600 mr-1.5"></div>
                 <span className="text-gray-700">
                   Fortes: <span className="font-bold text-green-600">{votoData[0].value}</span>
-                  <span className="text-gray-500 ml-1">({Math.round((votoData[0].value / totalCadastros) * 100)}%)</span>
+                  <span className="text-gray-500 ml-1">({totalCadastros > 0 ? Math.round((votoData[0].value / totalCadastros) * 100) : 0}%)</span>
                 </span>
               </div>
 
@@ -147,7 +157,7 @@ export function HomeScreen({ userName, totalCadastros, onNavigate, onLogout }: H
                 <div className="w-3 h-3 rounded-full bg-yellow-500 mr-1.5"></div>
                 <span className="text-gray-700">
                   Médios: <span className="font-bold text-yellow-600">{votoData[1].value}</span>
-                  <span className="text-gray-500 ml-1">({Math.round((votoData[1].value / totalCadastros) * 100)}%)</span>
+                  <span className="text-gray-500 ml-1">({totalCadastros > 0 ? Math.round((votoData[1].value / totalCadastros) * 100) : 0}%)</span>
                 </span>
               </div>
 
@@ -155,12 +165,64 @@ export function HomeScreen({ userName, totalCadastros, onNavigate, onLogout }: H
                 <div className="w-3 h-3 rounded-full bg-red-600 mr-1.5"></div>
                 <span className="text-gray-700">
                   Fracos: <span className="font-bold text-red-600">{votoData[2].value}</span>
-                  <span className="text-gray-500 ml-1">({Math.round((votoData[2].value / totalCadastros) * 100)}%)</span>
+                  <span className="text-gray-500 ml-1">({totalCadastros > 0 ? Math.round((votoData[2].value / totalCadastros) * 100) : 0}%)</span>
                 </span>
               </div>
             </div>
           </div>
         )}
+
+        {/* Top 3 Regiões */}
+        <div className="bg-white rounded-2xl shadow-lg p-6 mb-6">
+          <div className="flex items-center mb-4">
+            <MapPin className="w-5 h-5 mr-2 text-blue-600" />
+            <h3 className="font-bold text-gray-900">Top 3 Regiões</h3>
+          </div>
+
+          <div className="space-y-4">
+            {/* Item 1 - Centro */}
+            <div>
+              <div className="flex items-center justify-between mb-1.5">
+                <span className="text-sm font-medium text-gray-700">Centro</span>
+                <span className="text-sm font-semibold text-blue-600">45 votos</span>
+              </div>
+              <div className="w-full h-2.5 bg-gray-100 rounded-full overflow-hidden">
+                <div
+                  className="h-full bg-blue-600 rounded-full transition-all"
+                  style={{ width: '80%' }}
+                ></div>
+              </div>
+            </div>
+
+            {/* Item 2 - Jardim Primavera */}
+            <div>
+              <div className="flex items-center justify-between mb-1.5">
+                <span className="text-sm font-medium text-gray-700">Jardim Primavera</span>
+                <span className="text-sm font-semibold text-blue-600">28 votos</span>
+              </div>
+              <div className="w-full h-2.5 bg-gray-100 rounded-full overflow-hidden">
+                <div
+                  className="h-full bg-blue-600 rounded-full transition-all"
+                  style={{ width: '50%' }}
+                ></div>
+              </div>
+            </div>
+
+            {/* Item 3 - Vila Nova */}
+            <div>
+              <div className="flex items-center justify-between mb-1.5">
+                <span className="text-sm font-medium text-gray-700">Vila Nova</span>
+                <span className="text-sm font-semibold text-blue-600">15 votos</span>
+              </div>
+              <div className="w-full h-2.5 bg-gray-100 rounded-full overflow-hidden">
+                <div
+                  className="h-full bg-blue-600 rounded-full transition-all"
+                  style={{ width: '30%' }}
+                ></div>
+              </div>
+            </div>
+          </div>
+        </div>
 
         {/* Agenda do Dia */}
         <div className="mb-6">
@@ -206,7 +268,7 @@ export function HomeScreen({ userName, totalCadastros, onNavigate, onLogout }: H
             ))}
 
             <button
-              onClick={() => alert('Em produção, abriria formulário de nova atividade na aba Agenda')}
+              onClick={() => onNavigate('agenda')}
               className="w-full bg-blue-50 border-2 border-blue-200 border-dashed hover:bg-blue-100 text-blue-600 py-3 px-4 rounded-xl text-sm font-semibold transition-all"
             >
               + Adicionar Nova Atividade
@@ -214,32 +276,20 @@ export function HomeScreen({ userName, totalCadastros, onNavigate, onLogout }: H
           </div>
         </div>
 
-        {/* Ações Rápidas */}
-        <div className="space-y-3 pb-20">
-          <button
-            onClick={() => onNavigate('list')}
-            className="w-full bg-white border-2 border-gray-200 hover:border-blue-600 hover:bg-blue-50 text-gray-800 py-4 px-6 rounded-xl text-left transition-all shadow flex items-center justify-between"
-          >
-            <div className="flex items-center">
-              <Users className="w-6 h-6 text-blue-600 mr-3" />
-              <div>
-                <p className="font-semibold">Meus Contatos</p>
-                <p className="text-sm text-gray-600">Ver lista completa</p>
-              </div>
-            </div>
-            <span className="text-gray-400">→</span>
-          </button>
-        </div>
+        {/* Espaçamento inferior para o botão flutuante */}
+        <div className="pb-20"></div>
       </div>
 
-      {/* Botão Flutuante - Novo Cadastro */}
-      <button
-        onClick={() => onNavigate('form')}
-        className="fixed bottom-24 right-6 w-14 h-14 bg-blue-600 hover:bg-blue-700 text-white rounded-full shadow-2xl flex items-center justify-center transition-all hover:scale-110 active:scale-95 z-40"
-        aria-label="Novo Cadastro"
-      >
-        <Plus className="w-7 h-7" strokeWidth={3} />
-      </button>
+      {/* Botao Flutuante - Novo Cadastro (apenas se tiver permissao) */}
+      {permissions.canCreateElector && (
+        <button
+          onClick={() => onNavigate('form')}
+          className="fixed bottom-24 right-6 w-14 h-14 bg-blue-600 hover:bg-blue-700 text-white rounded-full shadow-2xl flex items-center justify-center transition-all hover:scale-110 active:scale-95 z-40"
+          aria-label="Novo Cadastro"
+        >
+          <Plus className="w-7 h-7" strokeWidth={3} />
+        </button>
+      )}
     </div>
   );
 }

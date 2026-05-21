@@ -1,14 +1,16 @@
 import { useState } from 'react';
-import { User, Lock, Eye, EyeOff } from 'lucide-react';
+import { User, Lock, Eye, EyeOff, ChevronDown } from 'lucide-react';
+import { UserRole, ROLE_LABELS } from '../lib/rbac';
 
 interface LoginScreenProps {
-  onLogin: (user: { name: string; role: string }) => void;
+  onLogin: (user: { name: string; role: UserRole }) => void;
 }
 
 export function LoginScreen({ onLogin }: LoginScreenProps) {
   const [showPassword, setShowPassword] = useState(false);
   const [cpf, setCpf] = useState('');
   const [password, setPassword] = useState('');
+  const [selectedRole, setSelectedRole] = useState<UserRole>('captador_votos');
   const [error, setError] = useState('');
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -21,10 +23,10 @@ export function LoginScreen({ onLogin }: LoginScreenProps) {
       return;
     }
 
-    // Simula login bem-sucedido
+    // Simula login bem-sucedido com o papel selecionado
     onLogin({
       name: 'Victor',
-      role: 'Cabo Eleitoral'
+      role: selectedRole
     });
   };
 
@@ -83,6 +85,27 @@ export function LoginScreen({ onLogin }: LoginScreenProps) {
               </div>
             </div>
 
+            {/* Selecao de Papel (Demo) */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Perfil de Acesso (Demo)
+              </label>
+              <div className="relative">
+                <ChevronDown className="absolute right-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400 pointer-events-none" />
+                <select
+                  value={selectedRole}
+                  onChange={(e) => setSelectedRole(e.target.value as UserRole)}
+                  className="w-full px-4 py-4 text-lg border-2 border-gray-300 rounded-xl focus:border-blue-600 focus:outline-none transition-colors appearance-none bg-white"
+                >
+                  {(Object.keys(ROLE_LABELS) as UserRole[]).map((role) => (
+                    <option key={role} value={role}>
+                      {ROLE_LABELS[role]}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            </div>
+
             {error && (
               <div className="bg-red-50 border-2 border-red-200 rounded-xl p-3 text-red-700 text-sm">
                 {error}
@@ -112,7 +135,7 @@ export function LoginScreen({ onLogin }: LoginScreenProps) {
           {/* Info de Demo */}
           <div className="mt-6 p-4 bg-blue-50 rounded-xl">
             <p className="text-xs text-blue-800 text-center">
-              <strong>MODO DEMONSTRAÇÃO:</strong> Use qualquer CPF/senha para entrar
+              <strong>MODO DEMONSTRACAO:</strong> Selecione um perfil para testar diferentes niveis de acesso
             </p>
           </div>
         </div>

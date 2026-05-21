@@ -6,16 +6,18 @@ import { ContactList } from './components/ContactList';
 import { ElectorProfile } from './components/ElectorProfile';
 import { AgendaScreen } from './components/AgendaScreen';
 import { PollsScreen } from './components/PollsScreen';
+import { CoordinationScreen } from './components/CoordinationScreen';
+import { AdminScreen } from './components/AdminScreen';
 import { BottomNav } from './components/BottomNav';
 import { toast } from 'sonner';
 import { Toaster } from 'sonner';
+import { UserRole, Tab, getAllowedTabs, getPermissions, ROLE_LABELS } from './lib/rbac';
 
-type Screen = 'login' | 'home' | 'form' | 'list' | 'profile' | 'agenda' | 'polls';
-type Tab = 'home' | 'contacts' | 'agenda' | 'polls';
+type Screen = 'login' | 'home' | 'form' | 'list' | 'profile' | 'agenda' | 'polls' | 'coordination' | 'admin';
 
 interface User {
   name: string;
-  role: string;
+  role: UserRole;
 }
 
 export default function App() {
@@ -51,8 +53,10 @@ export default function App() {
     setUser(userData);
     localStorage.setItem('politiqui_user', JSON.stringify(userData));
     setCurrentScreen('home');
-    setCurrentTab('home');
-    toast.success(`Bem-vindo(a), ${userData.name}!`);
+    // Define a primeira tab permitida para o papel do usuario
+    const allowedTabs = getAllowedTabs(userData.role);
+    setCurrentTab(allowedTabs[0]);
+    toast.success(`Bem-vindo(a), ${userData.name}! (${ROLE_LABELS[userData.role]})`);
   };
 
   const handleTabChange = (tab: Tab) => {
@@ -69,6 +73,12 @@ export default function App() {
         break;
       case 'polls':
         setCurrentScreen('polls');
+        break;
+      case 'coordination':
+        setCurrentScreen('coordination');
+        break;
+      case 'admin':
+        setCurrentScreen('admin');
         break;
     }
   };
@@ -118,7 +128,15 @@ export default function App() {
     );
   }
 
+  // Obtem permissoes do usuario atual
+  const userPermissions = user ? getPermissions(user.role) : null;
+
   if (currentScreen === 'form') {
+    // Verifica se o usuario pode criar eleitores
+    if (!userPermissions?.canCreateElector) {
+      setCurrentScreen('home');
+      return null;
+    }
     return (
       <>
         <CaptureForm
@@ -153,7 +171,7 @@ export default function App() {
     return (
       <>
         <AgendaScreen />
-        <BottomNav currentTab={currentTab} onTabChange={handleTabChange} />
+        <BottomNav currentTab={currentTab} onTabChange={handleTabChange} userRole={user?.role || 'eleitor'} />
         <Toaster position="top-center" richColors />
       </>
     );
@@ -163,7 +181,27 @@ export default function App() {
     return (
       <>
         <PollsScreen />
-        <BottomNav currentTab={currentTab} onTabChange={handleTabChange} />
+        <BottomNav currentTab={currentTab} onTabChange={handleTabChange} userRole={user?.role || 'eleitor'} />
+        <Toaster position="top-center" richColors />
+      </>
+    );
+  }
+
+  if (currentScreen === 'coordination') {
+    return (
+      <>
+        <CoordinationScreen />
+        <BottomNav currentTab={currentTab} onTabChange={handleTabChange} userRole={user?.role || 'eleitor'} />
+        <Toaster position="top-center" richColors />
+      </>
+    );
+  }
+
+  if (currentScreen === 'admin') {
+    return (
+      <>
+        <AdminScreen />
+        <BottomNav currentTab={currentTab} onTabChange={handleTabChange} userRole={user?.role || 'eleitor'} />
         <Toaster position="top-center" richColors />
       </>
     );
@@ -178,10 +216,10 @@ export default function App() {
             setCurrentScreen('home');
             setCurrentTab('home');
           }}
-          onDelete={handleDeleteElector}
+          onDelete={userPermissions?.canDeleteElector ? handleDeleteElector : undefined}
           onViewProfile={handleViewProfile}
         />
-        <BottomNav currentTab={currentTab} onTabChange={handleTabChange} />
+        <BottomNav currentTab={currentTab} onTabChange={handleTabChange} userRole={user?.role || 'eleitor'} />
         <Toaster position="top-center" richColors />
       </>
     );
@@ -190,12 +228,13 @@ export default function App() {
   return (
     <>
       <HomeScreen
-        userName={user?.name || 'Usuário'}
+        userName={user?.name || 'Usuario'}
         totalCadastros={electors.length}
         onNavigate={setCurrentScreen}
         onLogout={handleLogout}
+        userRole={user?.role || 'eleitor'}
       />
-      <BottomNav currentTab={currentTab} onTabChange={handleTabChange} />
+      <BottomNav currentTab={currentTab} onTabChange={handleTabChange} userRole={user?.role || 'eleitor'} />
       <Toaster position="top-center" richColors />
     </>
   );
