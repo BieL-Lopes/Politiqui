@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { ArrowLeft, Search, Phone, MapPin, Trash2 } from 'lucide-react';
+import { ArrowLeft, Search, Phone, MapPin, Trash2, Download, FileText, FileSpreadsheet, X } from 'lucide-react';
 import { ElectorData } from './CaptureForm';
 
 interface ContactListProps {
@@ -11,6 +11,7 @@ interface ContactListProps {
 
 export function ContactList({ contacts, onBack, onDelete, onViewProfile }: ContactListProps) {
   const [searchTerm, setSearchTerm] = useState('');
+  const [showExportMenu, setShowExportMenu] = useState(false);
 
   const filteredContacts = contacts.filter(contact =>
     contact.nome.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -59,21 +60,165 @@ export function ContactList({ contacts, onBack, onDelete, onViewProfile }: Conta
     return date.toLocaleDateString('pt-BR');
   };
 
+  const exportToCSV = () => {
+    const headers = ['Nome', 'WhatsApp', 'Titulo Eleitor', 'Data Nascimento', 'Bairro', 'Cidade', 'Nivel Voto', 'Nivel Engajamento', 'Nichos', 'Aceita WhatsApp', 'Observacoes', 'Data Cadastro'];
+    const rows = filteredContacts.map(c => [
+      c.nome,
+      c.whatsapp,
+      c.tituloEleitor || '',
+      c.dataNascimento ? formatDate(c.dataNascimento) : '',
+      c.bairro,
+      c.cidade,
+      c.nivelVoto === 'forte' ? 'Forte' : c.nivelVoto === 'medio' ? 'Medio' : 'Fraco',
+      c.nivelEngajamento === 'lideranca' ? 'Lideranca' : c.nivelEngajamento === 'cabo_eleitoral' ? 'Cabo Eleitoral' : 'Eleitor Comum',
+      (c.nichos || []).join('; '),
+      c.aceitaWhatsapp ? 'Sim' : 'Nao',
+      c.observacoes || '',
+      formatDate(c.dataCadastro)
+    ]);
+
+    const csvContent = [headers, ...rows]
+      .map(row => row.map(cell => `"${String(cell).replace(/"/g, '""')}"`).join(','))
+      .join('\n');
+
+    const blob = new Blob(['\uFEFF' + csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `eleitores_${new Date().toISOString().split('T')[0]}.csv`;
+    link.click();
+    URL.revokeObjectURL(url);
+    setShowExportMenu(false);
+  };
+
+  const exportToPDF = () => {
+    const nivelVotoLabel = (nivel: string) => nivel === 'forte' ? 'Forte' : nivel === 'medio' ? 'Medio' : 'Fraco';
+    const nivelEngajamentoLabel = (nivel: string) => nivel === 'lideranca' ? 'Lideranca' : nivel === 'cabo_eleitoral' ? 'Cabo Eleitoral' : 'Eleitor Comum';
+
+    const htmlContent = `
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <meta charset="UTF-8">
+        <title>Lista de Eleitores</title>
+        <style>
+          body { font-family: Arial, sans-serif; padding: 20px; font-size: 12px; }
+          h1 { color: #2563eb; font-size: 18px; margin-bottom: 5px; }
+          .subtitle { color: #666; margin-bottom: 20px; font-size: 11px; }
+          table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+          th { background: #2563eb; color: white; padding: 8px 6px; text-align: left; font-size: 10px; }
+          td { padding: 6px; border-bottom: 1px solid #ddd; font-size: 10px; }
+          tr:nth-child(even) { background: #f9fafb; }
+          .badge { padding: 2px 6px; border-radius: 10px; font-size: 9px; font-weight: bold; }
+          .forte { background: #dcfce7; color: #166534; }
+          .medio { background: #fef9c3; color: #854d0e; }
+          .fraco { background: #fee2e2; color: #991b1b; }
+          @media print { body { padding: 0; } }
+        </style>
+      </head>
+      <body>
+        <h1>Lista de Eleitores Cadastrados</h1>
+        <p class="subtitle">Exportado em ${new Date().toLocaleDateString('pt-BR')} - Total: ${filteredContacts.length} eleitor(es)</p>
+        <table>
+          <thead>
+            <tr>
+              <th>Nome</th>
+              <th>WhatsApp</th>
+              <th>Bairro/Cidade</th>
+              <th>Voto</th>
+              <th>Engajamento</th>
+              <th>Cadastro</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${filteredContacts.map(c => `
+              <tr>
+                <td><strong>${c.nome}</strong></td>
+                <td>${c.whatsapp}</td>
+                <td>${c.bairro ? c.bairro + ', ' : ''}${c.cidade}</td>
+                <td><span class="badge ${c.nivelVoto}">${nivelVotoLabel(c.nivelVoto)}</span></td>
+                <td>${nivelEngajamentoLabel(c.nivelEngajamento)}</td>
+                <td>${formatDate(c.dataCadastro)}</td>
+              </tr>
+            `).join('')}
+          </tbody>
+        </table>
+      </body>
+      </html>
+    `;
+
+    const printWindow = window.open('', '_blank');
+    if (printWindow) {
+      printWindow.document.write(htmlContent);
+      printWindow.document.close();
+      printWindow.print();
+    }
+    setShowExportMenu(false);
+  };
+
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Header */}
       <div className="bg-blue-600 text-white p-4 sticky top-0 z-10 shadow-lg">
-        <div className="flex items-center mb-4">
-          <button
-            onClick={onBack}
-            className="mr-3 p-2 hover:bg-blue-700 rounded-lg transition-colors"
-          >
-            <ArrowLeft className="w-6 h-6" />
-          </button>
-          <div>
-            <h1 className="text-xl font-bold">Meus Contatos</h1>
-            <p className="text-sm text-blue-100">{contacts.length} eleitor(es) cadastrado(s)</p>
+        <div className="flex items-center justify-between mb-4">
+          <div className="flex items-center">
+            <button
+              onClick={onBack}
+              className="mr-3 p-2 hover:bg-blue-700 rounded-lg transition-colors"
+            >
+              <ArrowLeft className="w-6 h-6" />
+            </button>
+            <div>
+              <h1 className="text-xl font-bold">Meus Contatos</h1>
+              <p className="text-sm text-blue-100">{contacts.length} eleitor(es) cadastrado(s)</p>
+            </div>
           </div>
+
+          {/* Botao Exportar */}
+          {contacts.length > 0 && (
+            <div className="relative">
+              <button
+                onClick={() => setShowExportMenu(!showExportMenu)}
+                className="p-2 hover:bg-blue-700 rounded-lg transition-colors flex items-center"
+              >
+                <Download className="w-5 h-5" />
+              </button>
+
+              {showExportMenu && (
+                <div className="absolute right-0 top-12 bg-white rounded-xl shadow-xl border border-gray-200 overflow-hidden z-20 min-w-[180px]">
+                  <div className="p-2 bg-gray-50 border-b border-gray-200 flex items-center justify-between">
+                    <span className="text-sm font-semibold text-gray-700">Exportar</span>
+                    <button
+                      onClick={() => setShowExportMenu(false)}
+                      className="p-1 hover:bg-gray-200 rounded"
+                    >
+                      <X className="w-4 h-4 text-gray-500" />
+                    </button>
+                  </div>
+                  <button
+                    onClick={exportToCSV}
+                    className="w-full px-4 py-3 text-left hover:bg-blue-50 flex items-center text-gray-700 transition-colors"
+                  >
+                    <FileSpreadsheet className="w-5 h-5 mr-3 text-green-600" />
+                    <div>
+                      <p className="font-medium text-sm">CSV / Excel</p>
+                      <p className="text-xs text-gray-500">Planilha completa</p>
+                    </div>
+                  </button>
+                  <button
+                    onClick={exportToPDF}
+                    className="w-full px-4 py-3 text-left hover:bg-blue-50 flex items-center text-gray-700 border-t border-gray-100 transition-colors"
+                  >
+                    <FileText className="w-5 h-5 mr-3 text-red-600" />
+                    <div>
+                      <p className="font-medium text-sm">PDF / Imprimir</p>
+                      <p className="text-xs text-gray-500">Relatorio formatado</p>
+                    </div>
+                  </button>
+                </div>
+              )}
+            </div>
+          )}
         </div>
 
         {/* Barra de Busca */}
