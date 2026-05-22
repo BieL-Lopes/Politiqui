@@ -1,5 +1,6 @@
 import { useState } from 'react';
-import { ArrowLeft, Phone, MapPin, Calendar, Navigation, Tag, Award, Plus, FileText, Users as UsersIcon, Trash2, Clock, BookOpen, UserCheck, Edit2 } from 'lucide-react';
+import { ArrowLeft, Phone, MapPin, Calendar, Navigation, Tag, Award, Plus, FileText, Users as UsersIcon, Trash2, Clock, BookOpen, UserCheck, Edit2, QrCode } from 'lucide-react';
+import { QRCodeSVG } from 'qrcode.react';
 import { ElectorData, Atendimento } from './CaptureForm';
 
 interface ElectorProfileProps {
@@ -11,6 +12,7 @@ interface ElectorProfileProps {
 
 export function ElectorProfile({ elector, onBack, onUpdate, onEdit }: ElectorProfileProps) {
   const [activeTab, setActiveTab] = useState<'atendimentos' | 'atividades'>('atendimentos');
+  const [showQR, setShowQR] = useState(false);
   const [showNewAtendimento, setShowNewAtendimento] = useState(false);
   const [atendimentoDescricao, setAtendimentoDescricao] = useState('');
   const [atendimentoTipo, setAtendimentoTipo] = useState<'demanda' | 'visita' | 'reuniao' | 'ligacao'>('demanda');
@@ -195,6 +197,38 @@ export function ElectorProfile({ elector, onBack, onUpdate, onEdit }: ElectorPro
             )}
           </div>
         </div>
+
+        {/* QR Code do Título */}
+        {elector.tituloEleitor && (
+          <div className="bg-white rounded-xl shadow p-4">
+            <div className="flex items-center justify-between">
+              <h3 className="font-bold text-gray-900 flex items-center gap-2">
+                <QrCode className="w-5 h-5 text-blue-600" />
+                QR Code do Título
+              </h3>
+              <button
+                onClick={() => setShowQR(v => !v)}
+                className="text-sm text-blue-600 font-medium hover:text-blue-800 transition-colors"
+              >
+                {showQR ? 'Ocultar' : 'Mostrar'}
+              </button>
+            </div>
+            {showQR && (
+              <div className="flex flex-col items-center gap-3 mt-4">
+                <div className="p-3 bg-white border-2 border-gray-200 rounded-xl">
+                  <QRCodeSVG
+                    value={JSON.stringify({ titulo: elector.tituloEleitor, nome: elector.nome })}
+                    size={200}
+                    level="M"
+                  />
+                </div>
+                <p className="text-xs text-gray-400 text-center">
+                  Escaneie para preencher o título automaticamente
+                </p>
+              </div>
+            )}
+          </div>
+        )}
 
         {/* Nichos */}
         {elector.nichos && elector.nichos.length > 0 && (

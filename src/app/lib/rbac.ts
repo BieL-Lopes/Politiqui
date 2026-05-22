@@ -47,7 +47,7 @@ export const ROLE_PERMISSIONS: Record<UserRole, {
     canManageUsers: false
   },
   coordenador_regional: {
-    tabs: ['home', 'contacts', 'agenda', 'polls'],
+    tabs: ['home', 'contacts', 'agenda', 'polls', 'coordination'],
     canCreateElector: true,
     canDeleteElector: true,
     canExport: true,

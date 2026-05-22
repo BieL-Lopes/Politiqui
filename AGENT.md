@@ -10,20 +10,28 @@
 
 **Nome:** Politiqui  
 **Descrição:** Sistema de captação de eleitores para campanhas políticas.  
-**Estágio atual:** Frontend em React com dados mockados (sem backend real ainda).  
-**Plataforma:** Web (React) + futura versão mobile (a definir).
+**Estágio atual:** Frontend em React com dados mockados via `localStorage` (sem backend real ainda).  
+**Plataforma:** Web (React PWA) — futura versão mobile (a definir).
 
 ---
 
 ## 2. Stack Tecnológica
 
-### Frontend (atual)
-- **Framework:** React (Vite)
-- **Linguagem:** JavaScript/TypeScript (confirmar com o time)
-- **Estilização:** (documentar aqui: Tailwind / CSS Modules / Styled Components)
-- **Roteamento:** (documentar aqui: React Router / TanStack Router)
-- **Estado global:** (documentar aqui: Context API / Zustand / Redux)
-- **Dados:** Mockados localmente — sem chamadas reais a API ainda
+### Frontend (implementado)
+- **Framework:** React 18 + Vite 6
+- **Linguagem:** TypeScript
+- **Estilização:** Tailwind CSS v4 + shadcn/ui (Radix UI)
+- **Componentes UI:** `src/app/components/ui/` (gerados pelo shadcn)
+- **Ícones:** Lucide React
+- **Roteamento:** Sem router — navegação por estado (`activeTab`, `selectedElector`)
+- **Estado global:** `useState` em `App.tsx` (Context/Zustand não usados ainda)
+- **Notificações:** Sonner (`toast.success`, `toast.info`, `toast.error`)
+- **Gráficos:** Recharts 2.15.2
+- **QR Code (geração):** `qrcode.react` → `QRCodeSVG`
+- **QR Code (leitura):** `html5-qrcode` → `Html5Qrcode`
+- **Persistência:** `localStorage` (chaves: `politiqui_user`, `politiqui_electors`)
+- **Pacotes:** pnpm workspace (mas usar `npm` no terminal — pnpm não disponível no ambiente)
+- **Dev server:** `npm run dev`
 
 ### Backend (planejado — ainda não implementado)
 - **Plataforma:** Supabase
@@ -42,7 +50,33 @@
 
 ---
 
-## 3. Arquitetura de Dados
+## 3. Padrão de Cores (obrigatório)
+
+> **Cor padrão do app: AZUL (`blue-600` / `blue-700`)**
+> Nunca usar roxo (`purple`) ou vermelho (`red`) como cor de interface principal.
+
+### Regras de cor
+| Contexto | Classe |
+|---|---|
+| Header / gradiente principal | `bg-gradient-to-r from-blue-600 to-blue-700` |
+| Botão primário | `bg-blue-600 hover:bg-blue-700` |
+| Texto de destaque | `text-blue-600` / `text-blue-700` |
+| Fundo suave (card, hover) | `bg-blue-50` / `bg-blue-100` |
+| Borda de destaque | `border-blue-200` |
+| Subtítulo / subtext | `text-blue-100` (sobre fundo azul escuro) |
+
+### Exceções permitidas (UX semântica)
+| Situação | Cor | Justificativa |
+|---|---|---|
+| Badge papel "Liderança" | `red` | Distinção visual de papel de alto nível |
+| Hover botão Excluir / Trash | `hover:text-red-600 hover:bg-red-50` | Ação destrutiva — sinalização de perigo |
+| Badge papel "Coord. Geral" | `purple` | Distinção visual de papel |
+| Estado de erro / `toast.error` | `red` | Feedback negativo padrão |
+| Estado de sucesso / `toast.success` | `green` | Feedback positivo padrão |
+
+---
+
+## 4. Arquitetura de Dados
 
 ### Entidades principais
 
@@ -61,23 +95,45 @@ Atividade (agenda)
   └── Vinculada a: Eleitor + Usuário responsável
 ```
 
-### Campos obrigatórios do Eleitor
-- `id`
-- `nome`
-- `endereco`
-- `cpf` ou `email`
-- `titulo_eleitor` ← campo adicionado (ver tarefa #2 do roadmap)
-- `captador_id` (FK para o usuário captador)
-- `criado_em`
+### Interface `ElectorData` (implementada em CaptureForm.tsx)
+```ts
+interface ElectorData {
+  id: string
+  nome: string
+  telefone?: string
+  email?: string
+  endereco?: string
+  cpf?: string
+  dataNascimento?: string
+  nivelVoto?: 'certo' | 'provável' | 'incerto'
+  nicho?: string
+  tituloEleitor?: string   // 12 dígitos, validado no form
+  createdAt: string
+  createdBy?: string       // userId do captador
+  createdByName?: string   // nome exibível do captador
+  regiao?: string          // copiado do user.regiao no momento do cadastro
+}
+```
+
+### Interface `User` (implementada em `src/app/lib/auth.ts`)
+```ts
+interface User {
+  id: string
+  name: string
+  role: UserRole
+  regiao?: string
+  deputadoId?: string
+  coordenadorRegionalId?: string
+}
+```
 
 ---
 
-## 4. Papéis e Controle de Acesso (RBAC)
+## 5. Papéis e Controle de Acesso (RBAC)
 
 > O papel do usuário **nunca é escolhido pelo próprio usuário em produção**.
-> Ele vem do banco de dados após autenticação. O seletor de papel na tela de login
-> existe apenas para fins de **demonstração (demo)** e deve ser removido
-> ao integrar o backend real.
+> Ele vem do banco de dados após autenticação.
+> **O seletor de papel na tela de login foi REMOVIDO** — login usa CPF/e-mail + senha.
 
 ### Papéis definidos
 
@@ -106,50 +162,162 @@ Atividade (agenda)
 
 ---
 
-## 5. Boas Práticas de Código
+## 6. Autenticação (Mock — fase atual)
 
-### Geral
-- Sempre usar a constante de role, **nunca a string crua** em condicionais:
-  ```js
-  // ✅ correto
-  if (user.role === ROLES.CAPTADOR_VOTOS) { ... }
+Implementado em `src/app/lib/auth.ts`.
 
-  // ❌ errado
-  if (user.role === 'captador') { ... }
-  ```
-- Centralizar todos os textos exibidos ao usuário em um arquivo de strings (`src/constants/strings.js` ou similar). Nunca hardcodar texto de UI diretamente no componente.
-- Nunca commitar `.env` ou qualquer arquivo com credenciais.
+```ts
+// Credenciais mock: CPF formato '000.000.000-0X' ou email 'nome@politiqui.com', senha '1234'
+authenticateMock(login: string, password: string): User | null
 
-### Componentes React
-- Um componente por arquivo.
-- Componentes de página em `src/pages/`, componentes reutilizáveis em `src/components/`.
-- Guard de rota obrigatório para qualquer tela que exige autenticação:
-  ```jsx
-  <PrivateRoute allowedRoles={[ROLES.COORDENADOR_REGIONAL]}>
-    <TelaEquipe />
-  </PrivateRoute>
-  ```
+// Usuários mock disponíveis (id, nome, role, regiao?, deputadoId?, coordenadorRegionalId?)
+MOCK_USERS: User[]
 
-### Dados mockados (fase atual)
-- Mocks ficam em `src/mocks/`.
-- Cada entidade tem seu próprio arquivo: `eleitores.mock.js`, `usuarios.mock.js`, etc.
-- Ao integrar o Supabase, substituir apenas a camada de serviço (`src/services/`) — os componentes não devem saber se o dado é mock ou real.
+// Retorna string legível para exibição (ex: "Coordenador Regional • Centro")
+getUserLabel(user: User): string
+```
+
+- O login aceita CPF **ou** e-mail — sem seletor de papel visível.
+- Em produção, substituir `authenticateMock` por chamada ao Supabase Auth.
+- Sessão persistida em `localStorage` na chave `politiqui_user`.
 
 ---
 
-## 6. Padrão de Integração com Supabase (quando implementado)
+## 7. Padrão de Props das Telas Principais
 
-```js
-// src/services/eleitores.service.js
+Todas as telas de nível superior recebem as props abaixo via `App.tsx`:
 
+```ts
+// CoordinationScreen, AdminScreen
+interface ScreenProps {
+  user: User
+  electors: ElectorData[]
+  canExport: boolean
+}
+
+// CaptureForm
+interface CaptureFormProps {
+  onSave: (elector: ElectorData) => void
+  currentUser: User
+  electorToEdit?: ElectorData
+  onUpdate?: (elector: ElectorData) => void
+}
+
+// ElectorProfile
+interface ElectorProfileProps {
+  elector: ElectorData
+  onEdit: () => void
+}
+```
+
+- `canExport` vem de `getPermissions(user.role).canExport` (calculado em `App.tsx`).
+- Nunca calcular permissões dentro do componente filho — sempre receber como prop.
+
+---
+
+## 8. Padrão de Exportação CSV
+
+```ts
+function exportCSV(filename: string, headers: string[], rows: string[][]): void {
+  const bom = '\uFEFF'
+  const csv = bom + [headers, ...rows].map(r => r.map(c => `"${c}"`).join(',')).join('\n')
+  const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' })
+  const url = URL.createObjectURL(blob)
+  const a = document.createElement('a')
+  a.href = url; a.download = filename; a.click()
+  URL.revokeObjectURL(url)
+}
+```
+
+- Sempre verificar `canExport` antes de renderizar o botão e antes de chamar a função.
+- Incluir BOM (`\uFEFF`) para compatibilidade com Excel + acentos em português.
+
+---
+
+## 9. Padrão QR Code
+
+### Geração (ElectorProfile.tsx)
+```tsx
+import { QRCodeSVG } from 'qrcode.react'
+
+<QRCodeSVG
+  value={JSON.stringify({ titulo: elector.tituloEleitor, nome: elector.nome })}
+  size={180}
+  level="M"
+/>
+```
+
+### Leitura (CaptureForm.tsx → QrScannerModal.tsx)
+- Componente: `src/app/components/QrScannerModal.tsx`
+- Usa `Html5Qrcode` da lib `html5-qrcode`
+- Lê via câmera, retorna `rawText` para o pai via `onScan(rawText: string)`
+- O pai (`CaptureForm`) trata o texto: tenta `JSON.parse`, extrai `titulo`, fallback para texto cru
+- Debounce via `useRef` (`scannedRef`) evita múltiplos disparos
+
+---
+
+## 10. Padrão de Persistência (localStorage)
+
+```ts
+// Salvar eleitores
+localStorage.setItem('politiqui_electors', JSON.stringify(electors))
+
+// Carregar eleitores (com migração para campos novos)
+const saved = JSON.parse(localStorage.getItem('politiqui_electors') ?? '[]')
+const migrated = saved.map((e: ElectorData) => ({
+  createdBy: e.createdBy ?? 'unknown',
+  createdByName: e.createdByName ?? 'Usuário',
+  regiao: e.regiao ?? '',
+  ...e,
+}))
+```
+
+- Migração de registros antigos é feita no `useEffect` inicial de `App.tsx`.
+- Ao adicionar novos campos à `ElectorData`, sempre adicionar migração com valor padrão.
+
+---
+
+## 11. Boas Práticas de Código
+
+### Geral
+- Comparar roles pela string literal (TypeScript garante o tipo via `UserRole`):
+  ```ts
+  // ✅ correto — TypeScript valida via union type
+  if (user.role === 'coordenador_regional') { ... }
+
+  // ❌ nunca usar 'apoiador'
+  if (user.role === 'apoiador') { ... }
+  ```
+- Nunca commitar `.env` ou qualquer arquivo com credenciais.
+- Ao editar um componente, não deixar corpo de função duplicado — verificar se o replace não deixou código antigo abaixo.
+
+### Componentes React
+- Um componente por arquivo.
+- Componentes de tela em `src/app/components/`, shadcn/ui em `src/app/components/ui/`.
+- Não usar roteamento — navegação é feita via estado no `App.tsx`.
+- Conflito de nomes: se importar `User` de `auth.ts` e ícone `User` de lucide, usar alias:
+  ```ts
+  import { User as UserIcon } from 'lucide-react'
+  ```
+
+### Dados mockados
+- Mock de usuários em `src/app/lib/auth.ts` (`MOCK_USERS`, `MOCK_CREDENTIALS`).
+- Eleitores vivem em `localStorage` — não há arquivo de mock de eleitores.
+- Ao integrar o Supabase, substituir apenas a camada de serviço — os componentes não mudam.
+
+---
+
+## 12. Padrão de Integração com Supabase (quando implementado)
+
+```ts
+// src/services/eleitores.service.ts
 import { supabase } from '../lib/supabase'
 
-export async function getEleitoresDoCaptador(captadorId) {
+export async function getEleitoresDoCaptador(captadorId: string) {
   const { data, error } = await supabase
     .from('eleitores')
     .select('*')
     .eq('captador_id', captadorId)
-
   if (error) throw error
   return data
 }
@@ -161,75 +329,56 @@ export async function getEleitoresDoCaptador(captadorId) {
 
 ---
 
-## 7. Docker e Build
+## 13. Docker e Build
 
 ### Regras obrigatórias
-- O `COPY package*.json ./` **sempre antes** do `npm ci` para aproveitar cache de camadas.
-- Usar `npm ci` (não `npm install`) no build — é mais rápido e determinístico.
-- Manter `.dockerignore` atualizado. Mínimo obrigatório:
+- `COPY package*.json ./` **sempre antes** do `npm ci` para aproveitar cache de camadas.
+- Usar `npm ci` no build — determinístico.
+- Manter `.dockerignore`:
   ```
   node_modules
   dist
   .git
   .env*
   ```
-- Todo `RUN` que instala pacotes de SO deve agrupar em um único comando e remover o cache ao final:
-  ```dockerfile
-  RUN apk add --no-cache tzdata \
-      && cp /usr/share/zoneinfo/$TZ /etc/localtime \
-      && echo $TZ > /etc/timezone \
-      && apk del tzdata
-  ```
-
-### Variáveis de ambiente
 - Variáveis `VITE_*` são embutidas no bundle em tempo de build — **não são segredos**.
-- Nunca colocar tokens ou chaves privadas em variáveis `VITE_*`.
-- Segredos reais ficam apenas no backend/Supabase, nunca no frontend.
 
 ---
 
-## 8. Roadmap de Implementação
-
-Ordem definida em reunião. **Não alterar a prioridade sem aprovação do time.**
+## 14. Roadmap de Implementação
 
 | # | Tarefa | Complexidade | Status |
 |---|---|---|---|
-| 1 | Renomear "Apoiador" → "Cabo Eleitoral" | Fácil | 🔲 |
-| 2 | Adicionar campo "Título de Eleitor" | Fácil | 🔲 |
-| 3 | Exportação de dados (CSV/PDF) | Médio | 🔲 |
-| 4 | RBAC e abas condicionais por papel | Médio | 🔲 |
-| 5 | QR Code (geração e leitura) | Médio | 🔲 |
-| 6 | Tela do Coordenador Regional | Médio | 🔲 |
-| 7 | Dashboard gerencial (Coord. Geral / Liderança) | Complexo | 🔲 |
-| 8 | Modo offline nos celulares | Complexo | 🔲 |
+| 1 | Persistência localStorage + validação tituloEleitor | Fácil | ✅ Feito |
+| 2 | Auth mock (CPF/email+senha) + createdBy no eleitor | Médio | ✅ Feito |
+| 3 | Exportação CSV (Admin + Coordination) + RBAC canExport | Médio | ✅ Feito |
+| 4 | CoordinationScreen KPIs reais + drill-down + AdminScreen dashboard recharts | Complexo | ✅ Feito |
+| 5 | QR Code geração (ElectorProfile) + leitura câmera (CaptureForm) | Médio | ✅ Feito |
+| 6 | IndexedDB (Dexie) + PWA (vite-plugin-pwa) + offline sync | Complexo | 🔲 Pendente |
+| 7 | Backend Supabase + autenticação real + sync bidirecional | Complexo | 🔲 Pendente |
+| 8 | Testes unitários + E2E + QA | Complexo | 🔲 Pendente |
 
 ---
 
-## 9. O Que o Agente de IA Nunca Deve Fazer
+## 15. O Que o Agente de IA Nunca Deve Fazer
 
-- ❌ Inventar nomes de roles que não estão na tabela da seção 4
 - ❌ Usar a string `'apoiador'` em qualquer código novo
-- ❌ Sugerir chamar APIs externas que não estão documentadas aqui
-- ❌ Criar estrutura de pastas diferente da definida na seção 5
+- ❌ Adicionar seletor de papel na tela de login
+- ❌ Usar `purple` ou `red` como cor principal de UI (só permitido em badges de papel e ações destrutivas)
+- ❌ Calcular permissões dentro de componentes filhos — sempre receber como prop
+- ❌ Chamar `supabase` diretamente dentro de componentes
 - ❌ Implementar backend diferente de Supabase sem aprovação registrada neste arquivo
-- ❌ Remover o `.dockerignore` ou alterar a ordem do Dockerfile sem justificativa
-- ❌ Hardcodar textos de UI em componentes
+- ❌ Deixar corpo de função duplicado após replace parcial de código
 - ❌ Colocar lógica de negócio dentro de componentes de apresentação
 
 ---
 
-## 10. Dúvidas e Decisões Pendentes
+## 16. Decisões Pendentes
 
-> Registrar aqui toda decisão que ainda não foi tomada. O agente deve perguntar
-> antes de assumir qualquer uma dessas indefinições.
-
-- [ ] Biblioteca de estilização (Tailwind / CSS Modules / outra?)
-- [ ] Biblioteca de roteamento (React Router v6 / TanStack?)
-- [ ] Gerenciamento de estado global (Context API / Zustand?)
-- [ ] O seletor de papel na tela de login será mantido em staging ou removido?
-- [ ] Migrar valor `'apoiador'` no banco ou manter e só trocar o rótulo visual?
-- [ ] App mobile será React Native ou Flutter?
-- [ ] Deploy em qual plataforma? (Railway / Fly.io / VPS própria?)
+- [ ] App mobile: React Native ou Flutter?
+- [ ] Deploy: Railway / Fly.io / VPS própria?
+- [ ] Gerenciamento de estado global: Context API ou Zustand? (migrar quando crescer)
+- [ ] Quando integrar Supabase: migrar `ElectorData` para schema do banco
 
 ---
 

@@ -217,7 +217,11 @@ export default function App() {
   if (currentScreen === 'coordination') {
     return (
       <>
-        <CoordinationScreen />
+        <CoordinationScreen
+          user={user!}
+          electors={electors}
+          canExport={userPermissions?.canExport ?? false}
+        />
         <BottomNav currentTab={currentTab} onTabChange={handleTabChange} userRole={user?.role || 'eleitor'} />
         <Toaster position="top-center" richColors />
       </>
@@ -227,7 +231,11 @@ export default function App() {
   if (currentScreen === 'admin') {
     return (
       <>
-        <AdminScreen />
+        <AdminScreen
+          user={user!}
+          electors={electors}
+          canExport={userPermissions?.canExport ?? false}
+        />
         <BottomNav currentTab={currentTab} onTabChange={handleTabChange} userRole={user?.role || 'eleitor'} />
         <Toaster position="top-center" richColors />
       </>

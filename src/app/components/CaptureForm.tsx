@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
-import { ArrowLeft, Save, User, Phone, Calendar, MapPin, MessageSquare, Navigation, Tag, Award } from 'lucide-react';
+import { ArrowLeft, Save, User, Phone, Calendar, MapPin, MessageSquare, Navigation, Tag, Award, Camera } from 'lucide-react';
+import { QrScannerModal } from './QrScannerModal';
 
 export interface Atendimento {
   id: string;
@@ -59,6 +60,7 @@ export function CaptureForm({ onBack, onSave, electorToEdit, onUpdate }: Capture
   const [cidade, setCidade] = useState(electorToEdit?.cidade ?? '');
   const [nivelVoto, setNivelVoto] = useState<'forte' | 'medio' | 'fraco' | ''>(electorToEdit?.nivelVoto ?? '');
   const [nivelEngajamento, setNivelEngajamento] = useState<'lideranca' | 'cabo_eleitoral' | 'eleitor_comum' | ''>(electorToEdit?.nivelEngajamento ?? '');
+  const [showQrScanner, setShowQrScanner] = useState(false);
   const [nichos, setNichos] = useState<string[]>(electorToEdit?.nichos ?? []);
   const [gpsLatitude, setGpsLatitude] = useState<number | undefined>(electorToEdit?.gpsLatitude ?? undefined);
   const [gpsLongitude, setGpsLongitude] = useState<number | undefined>(electorToEdit?.gpsLongitude ?? undefined);
@@ -256,14 +258,24 @@ export function CaptureForm({ onBack, onSave, electorToEdit, onUpdate }: Capture
             <label className="block text-sm font-medium text-gray-700 mb-2">
               Titulo de Eleitor
             </label>
-            <input
-              type="text"
-              value={tituloEleitor}
-              onChange={(e) => handleTituloEleitorChange(e.target.value)}
-              className="w-full px-4 py-3 text-lg border-2 border-gray-300 rounded-lg focus:border-blue-600 focus:outline-none"
-              placeholder="0000 0000 0000"
-              maxLength={14}
-            />
+            <div className="flex gap-2">
+              <input
+                type="text"
+                value={tituloEleitor}
+                onChange={(e) => handleTituloEleitorChange(e.target.value)}
+                className="flex-1 px-4 py-3 text-lg border-2 border-gray-300 rounded-lg focus:border-blue-600 focus:outline-none"
+                placeholder="0000 0000 0000"
+                maxLength={14}
+              />
+              <button
+                type="button"
+                onClick={() => setShowQrScanner(true)}
+                className="px-4 py-3 bg-blue-50 border-2 border-blue-200 text-blue-700 rounded-lg hover:bg-blue-100 transition-colors flex items-center gap-1.5"
+                title="Escanear QR Code do título"
+              >
+                <Camera className="w-5 h-5" />
+              </button>
+            </div>
           </div>
         </div>
 
@@ -488,6 +500,25 @@ export function CaptureForm({ onBack, onSave, electorToEdit, onUpdate }: Capture
           </button>
         </div>
       </form>
+
+      {showQrScanner && (
+        <QrScannerModal
+          onScan={(rawText) => {
+            // Tenta extrair o título de um JSON (gerado pelo Politiqui) ou usa o texto direto
+            let titulo = rawText;
+            try {
+              const parsed = JSON.parse(rawText);
+              titulo = parsed.titulo ?? parsed.tituloEleitor ?? rawText;
+            } catch {
+              // rawText é só dígitos ou texto livre
+            }
+            handleTituloEleitorChange(titulo);
+            setShowQrScanner(false);
+          }}
+          onClose={() => setShowQrScanner(false)}
+        />
+      )}
     </div>
   );
 }
+
