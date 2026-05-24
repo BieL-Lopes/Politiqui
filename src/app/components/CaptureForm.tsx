@@ -504,15 +504,12 @@ export function CaptureForm({ onBack, onSave, electorToEdit, onUpdate }: Capture
       {showQrScanner && (
         <QrScannerModal
           onScan={(rawText) => {
-            // Tenta extrair o título de um JSON (gerado pelo Politiqui) ou usa o texto direto
-            let titulo = rawText;
+            let value = rawText;
             try {
               const parsed = JSON.parse(rawText);
-              titulo = parsed.titulo ?? parsed.tituloEleitor ?? rawText;
-            } catch {
-              // rawText é só dígitos ou texto livre
-            }
-            handleTituloEleitorChange(titulo);
+              value = parsed.numeroInscricao ?? parsed.nrTitulo ?? parsed.titulo ?? rawText;
+            } catch {}
+            handleTituloEleitorChange(String(value));
             setShowQrScanner(false);
           }}
           onClose={() => setShowQrScanner(false)}

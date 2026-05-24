@@ -1,27 +1,90 @@
 import { useState } from 'react';
-import { User as UserIcon, Lock, Eye, EyeOff } from 'lucide-react';
+import { User as UserIcon, Lock, Eye, EyeOff, AtSign, CreditCard } from 'lucide-react';
 import { User, authenticateMock } from '../lib/auth';
 
 interface LoginScreenProps {
   onLogin: (user: User) => void;
 }
 
+type InputType = 'cpf' | 'email' | 'unknown';
+
+function detectInputType(value: string): InputType {
+  if (value === '') return 'unknown';
+  if (/^\d/.test(value)) return 'cpf';
+  if (value.includes('@')) return 'email';
+  if (/^[a-zA-Z]/.test(value)) return 'email';
+  return 'unknown';
+}
+
+function formatCPF(value: string): string {
+  const digits = value.replace(/\D/g, '').slice(0, 11);
+  if (digits.length <= 3) return digits;
+  if (digits.length <= 6) return `${digits.slice(0, 3)}.${digits.slice(3)}`;
+  if (digits.length <= 9) return `${digits.slice(0, 3)}.${digits.slice(3, 6)}.${digits.slice(6)}`;
+  return `${digits.slice(0, 3)}.${digits.slice(3, 6)}.${digits.slice(6, 9)}-${digits.slice(9)}`;
+}
+
+function validateCPF(value: string): string | null {
+  const digits = value.replace(/\D/g, '');
+  if (digits.length < 11) return 'CPF incompleto';
+  return null;
+}
+
+function validateEmail(value: string): string | null {
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  if (!emailRegex.test(value)) return 'E-mail inválido';
+  return null;
+}
+
 export function LoginScreen({ onLogin }: LoginScreenProps) {
   const [showPassword, setShowPassword] = useState(false);
-  const [cpf, setCpf] = useState('');
+  const [login, setLogin] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
+  const [fieldError, setFieldError] = useState('');
+
+  const inputType = detectInputType(login);
+
+  const handleLoginChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const raw = e.target.value;
+    setFieldError('');
+    if (detectInputType(raw) === 'cpf') {
+      setLogin(formatCPF(raw));
+    } else {
+      setLogin(raw);
+    }
+  };
+
+  const handleLoginBlur = () => {
+    if (!login) return;
+    if (inputType === 'cpf') {
+      const err = validateCPF(login);
+      if (err) setFieldError(err);
+    } else if (inputType === 'email') {
+      const err = validateEmail(login);
+      if (err) setFieldError(err);
+    }
+  };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
+    setFieldError('');
 
-    if (!cpf || !password) {
+    if (!login || !password) {
       setError('Preencha todos os campos');
       return;
     }
 
-    const user = authenticateMock(cpf, password);
+    if (inputType === 'cpf') {
+      const err = validateCPF(login);
+      if (err) { setFieldError(err); return; }
+    } else if (inputType === 'email') {
+      const err = validateEmail(login);
+      if (err) { setFieldError(err); return; }
+    }
+
+    const user = authenticateMock(login, password);
     if (!user) {
       setError('CPF/e-mail ou senha incorretos');
       return;
@@ -50,16 +113,41 @@ export function LoginScreen({ onLogin }: LoginScreenProps) {
                 CPF ou E-mail
               </label>
               <div className="relative">
-                <UserIcon className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+                {inputType === 'email' ? (
+                  <AtSign className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-blue-500" />
+                ) : inputType === 'cpf' ? (
+                  <CreditCard className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-blue-500" />
+                ) : (
+                  <UserIcon className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+                )}
                 <input
                   type="text"
-                  value={cpf}
-                  onChange={(e) => setCpf(e.target.value)}
-                  className="w-full pl-12 pr-4 py-4 text-lg border-2 border-gray-300 rounded-xl focus:border-blue-600 focus:outline-none transition-colors"
+                  value={login}
+                  onChange={handleLoginChange}
+                  onBlur={handleLoginBlur}
+                  className={`w-full pl-12 pr-24 py-4 text-lg border-2 rounded-xl focus:outline-none transition-colors ${
+                    fieldError
+                      ? 'border-red-400 focus:border-red-500'
+                      : 'border-gray-300 focus:border-blue-600'
+                  }`}
                   placeholder="CPF ou e-mail"
                   autoComplete="username"
+                  inputMode={inputType === 'cpf' ? 'numeric' : 'email'}
+                  maxLength={inputType === 'cpf' ? 14 : undefined}
                 />
+                {inputType !== 'unknown' && (
+                  <span className={`absolute right-3 top-1/2 -translate-y-1/2 text-xs font-semibold px-2 py-1 rounded-lg ${
+                    inputType === 'cpf'
+                      ? 'bg-blue-100 text-blue-700'
+                      : 'bg-purple-100 text-purple-700'
+                  }`}>
+                    {inputType === 'cpf' ? 'CPF' : 'E-mail'}
+                  </span>
+                )}
               </div>
+              {fieldError && (
+                <p className="mt-1 text-xs text-red-600 pl-1">{fieldError}</p>
+              )}
             </div>
 
             {/* Campo Senha */}

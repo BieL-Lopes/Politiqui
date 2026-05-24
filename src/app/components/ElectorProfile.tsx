@@ -217,7 +217,7 @@ export function ElectorProfile({ elector, onBack, onUpdate, onEdit }: ElectorPro
               <div className="flex flex-col items-center gap-3 mt-4">
                 <div className="p-3 bg-white border-2 border-gray-200 rounded-xl">
                   <QRCodeSVG
-                    value={JSON.stringify({ titulo: elector.tituloEleitor, nome: elector.nome })}
+                    value={elector.tituloEleitor.replace(/\D/g, '')}
                     size={200}
                     level="M"
                   />
