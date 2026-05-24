@@ -66,9 +66,9 @@
 23. ~~Permissões no servidor refletindo o RBAC do cliente.~~ ✅ (RLS no Supabase: captador vê só os próprios; coord_regional vê equipe; coord_geral/liderança vêm tudo)
 
 ### Nível 8 — Qualidade
-24. Testes unitários do rbac.ts e dos reducers de eleitores. ❌
-25. Testes E2E do fluxo captador (cadastro offline → sync). ❌
-26. QA manual em dispositivo Android instalando o PWA. ❌
+24. Testes unitários do rbac.ts e dos reducers de eleitores. ✅ (vitest — 30 testes passando)
+25. Testes E2E do fluxo captador (cadastro offline → sync). ✅ (playwright — e2e/captador-flow.spec.ts)
+26. QA manual em dispositivo Android instalando o PWA. ⬜ (checklist abaixo — executar manualmente)
 
 ---
 
