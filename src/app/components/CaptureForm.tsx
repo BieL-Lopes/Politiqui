@@ -13,6 +13,7 @@ export interface ElectorData {
   id: string;
   nome: string;
   whatsapp: string;
+  email?: string;
   tituloEleitor: string;
   dataNascimento: string;
   bairro: string;
@@ -29,6 +30,7 @@ export interface ElectorData {
   createdBy?: string;       // id do captador responsavel
   createdByName?: string;   // nome desnormalizado para exibicao rapida
   regiao?: string;          // herdada do captador no momento do cadastro
+  updatedAt?: string;       // timestamp da última modificação (usado para sincronização)
 }
 
 interface CaptureFormProps {
@@ -54,6 +56,7 @@ const NICHOS_DISPONIVEIS = [
 export function CaptureForm({ onBack, onSave, electorToEdit, onUpdate }: CaptureFormProps) {
   const [nome, setNome] = useState(electorToEdit?.nome ?? '');
   const [whatsapp, setWhatsapp] = useState(electorToEdit?.whatsapp ?? '');
+  const [email, setEmail] = useState(electorToEdit?.email ?? '');
   const [tituloEleitor, setTituloEleitor] = useState(electorToEdit?.tituloEleitor ?? '');
   const [dataNascimento, setDataNascimento] = useState(electorToEdit?.dataNascimento ?? '');
   const [bairro, setBairro] = useState(electorToEdit?.bairro ?? '');
@@ -151,6 +154,7 @@ export function CaptureForm({ onBack, onSave, electorToEdit, onUpdate }: Capture
     const formData = {
       nome,
       whatsapp,
+      email,
       tituloEleitor,
       dataNascimento,
       bairro,
@@ -171,6 +175,7 @@ export function CaptureForm({ onBack, onSave, electorToEdit, onUpdate }: Capture
       // Limpa o formulario apenas no modo criacao
       setNome('');
       setWhatsapp('');
+      setEmail('');
       setTituloEleitor('');
       setDataNascimento('');
       setBairro('');
@@ -237,6 +242,19 @@ export function CaptureForm({ onBack, onSave, electorToEdit, onUpdate }: Capture
                 required
               />
             </div>
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              E-mail
+            </label>
+            <input
+              type="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              className="w-full px-4 py-3 text-lg border-2 border-gray-300 rounded-lg focus:border-blue-600 focus:outline-none"
+              placeholder="exemplo@email.com"
+            />
           </div>
 
           <div>
@@ -504,12 +522,14 @@ export function CaptureForm({ onBack, onSave, electorToEdit, onUpdate }: Capture
       {showQrScanner && (
         <QrScannerModal
           onScan={(rawText) => {
-            let value = rawText;
+            let titulo = rawText;
             try {
               const parsed = JSON.parse(rawText);
-              value = parsed.numeroInscricao ?? parsed.nrTitulo ?? parsed.titulo ?? rawText;
+              titulo = parsed.numeroInscricao ?? parsed.nrTitulo ?? parsed.titulo ?? rawText;
+              if (!nome && parsed.nomeCivil) setNome(parsed.nomeCivil);
+              if (!dataNascimento && parsed.dataNascimento) setDataNascimento(parsed.dataNascimento);
             } catch {}
-            handleTituloEleitorChange(String(value));
+            handleTituloEleitorChange(String(titulo));
             setShowQrScanner(false);
           }}
           onClose={() => setShowQrScanner(false)}

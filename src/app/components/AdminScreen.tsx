@@ -8,12 +8,13 @@ import {
   LineChart, Line, ResponsiveContainer, CartesianGrid, Legend
 } from 'recharts';
 import { UserRole, ROLE_LABELS } from '../lib/rbac';
-import { User, MOCK_USERS } from '../lib/auth';
+import { User } from '../lib/auth';
 import { ElectorData } from './CaptureForm';
 
 interface Props {
   user: User;
   electors: ElectorData[];
+  users: User[];
   canExport: boolean;
 }
 
@@ -31,7 +32,7 @@ function exportCSV(rows: Record<string, unknown>[], filename: string) {
   a.click();
 }
 
-export function AdminScreen({ user, electors, canExport }: Props) {
+export function AdminScreen({ user, electors, users, canExport }: Props) {
   const showDashboard = user.role === 'lideranca' || user.role === 'coordenador_geral';
   const [activeTab, setActiveTab] = useState<'users' | 'dashboard' | 'settings'>(
     showDashboard ? 'dashboard' : 'users'
@@ -40,7 +41,7 @@ export function AdminScreen({ user, electors, canExport }: Props) {
   // ── Export handlers ──
   const handleExportUsers = () => {
     exportCSV(
-      MOCK_USERS.map(u => ({
+      users.map(u => ({
         id: u.id,
         nome: u.name,
         role: ROLE_LABELS[u.role],
@@ -205,7 +206,7 @@ export function AdminScreen({ user, electors, canExport }: Props) {
               </h2>
               <div className="grid grid-cols-2 gap-2">
                 {(Object.keys(ROLE_LABELS) as UserRole[]).map(role => {
-                  const count = MOCK_USERS.filter(u => u.role === role).length;
+                  const count = users.filter(u => u.role === role).length;
                   return (
                     <div key={role} className="flex items-center justify-between p-2 bg-gray-50 rounded-lg">
                       <span className="text-sm text-gray-700">{ROLE_LABELS[role]}</span>
@@ -222,7 +223,7 @@ export function AdminScreen({ user, electors, canExport }: Props) {
                 <h2 className="font-bold text-gray-900">Lista de Usuários</h2>
               </div>
               <div className="divide-y divide-gray-100">
-                {MOCK_USERS.map(u => (
+                {users.map(u => (
                   <div key={u.id} className="p-4 flex items-center justify-between">
                     <div className="flex-1">
                       <h3 className="font-semibold text-gray-900">{u.name}</h3>

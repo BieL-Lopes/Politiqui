@@ -21,8 +21,8 @@
 | Edição de eleitor | ✅ CaptureForm com modo edit (prop electorToEdit) |
 | Validação título de eleitor (12 dígitos) | ✅ CaptureForm.tsx |
 | Login com detecção CPF/e-mail + máscara + validação | ✅ LoginScreen.tsx |
-| Tela exclusiva do Coordenador Geral (drill-down deputado) | ❌ |
-| Exportação em Admin/Coordenação + RBAC canExport | ❌ |
+| Tela exclusiva do Coordenador Geral (drill-down deputado) | ✅ CoordinationScreen.tsx — drill-down por deputadoId |
+| Exportação em Admin/Coordenação + RBAC canExport | ✅ |
 | Offline-first real (PWA/IndexedDB/sync) | ❌ Só localStorage, sem service worker |
 | Backend/API + sincronização | ❌ |
 
@@ -39,31 +39,31 @@
 6. ~~Adicionar entidade User real (id, nome, role, regiao, deputadoId) no localStorage e no login.~~ ✅
 7. ~~Edição de eleitor (reaproveitar CaptureForm com modo edit).~~ ✅
 
-### Nível 3 — Exportação ampliada
-8. Botão de exportar também em Admin/Coordenação (CSV de usuários, CSV agregado). ❌
-9. Limitar exportação por RBAC (canExport). ❌
+### Nível 3 — Exportação ampliada ✅ CONCLUÍDO
+8. ~~Botão de exportar também em Admin/Coordenação (CSV de usuários, CSV agregado).~~ ✅
+9. ~~Limitar exportação por RBAC (canExport).~~ ✅
 
 ### Nível 4 — Coordenação real ✅ CONCLUÍDO
 10. ~~Reformular CoordinationScreen.tsx para listar captadores da equipe com KPIs reais agrupando electors por createdBy.~~ ✅
-11. Criar tela do Coordenador Geral com visão por coordenador regional → por captador (drill-down), vinculada ao deputadoId. ❌
+11. ~~Criar tela do Coordenador Geral com visão por coordenador regional → por captador (drill-down), vinculada ao deputadoId.~~ ✅
 12. ~~Dashboard de Liderança em AdminScreen com gráficos (recharts): por região, por nível de voto, por nicho, evolução por dia.~~ ✅
-
+> **Nível 4 100% concluído.** Próximo pendente: Nível 6 (Offline-first / PWA).
 ### Nível 5 — QR Code ✅ CONCLUÍDO
 13. ~~Instalar qrcode.react (gerar) e html5-qrcode (ler).~~ ✅
 14. ~~Gerar QR no perfil do eleitor codificando tituloEleitor.~~ ✅
 15. ~~Escanear QR no fluxo de novo cadastro: botão "Escanear título" preenche o campo automaticamente. Tratar permissão de câmera + debounce.~~ ✅
 
 ### Nível 6 — Offline-first real
-16. Migrar storage de localStorage para IndexedDB via idb ou Dexie. ❌
-17. Transformar o app em PWA: adicionar vite-plugin-pwa, manifest, ícones, service worker. ❌
-18. Fila de sincronização: tabela pending_changes (create/update/delete), flush quando navigator.onLine. ❌
-19. Indicador visual de status online/offline e de itens pendentes. ❌
+16. ~~Migrar storage de localStorage para IndexedDB via idb ou Dexie.~~ ✅ (Dexie + `db.ts`; migração one-time do localStorage na inicialização)
+17. ~~Transformar o app em PWA: adicionar vite-plugin-pwa, manifest, ícones, service worker.~~ ✅ (`vite-plugin-pwa` + `manifest.webmanifest` + `sw.js` gerado no build)
+18. ~~Fila de sincronização: tabela pending_changes (create/update/delete), flush quando navigator.onLine.~~ ✅ (tabela `pendingChanges` no Dexie; flush automático ao voltar online em `useSync.ts`)
+19. ~~Indicador visual de status online/offline e de itens pendentes.~~ ✅ (`OfflineBanner.tsx` — barra fixa com WifiOff/spin + badge de pendentes)
 
 ### Nível 7 — Backend + sync
-20. Definir API (REST/Supabase/Firebase) com endpoints de electors, users, polls, agenda. ❌
-21. ~~Autenticação com detecção CPF/e-mail, máscara e validação no LoginScreen.~~ ✅ (mock ainda)
-22. Sincronização bidirecional com resolução de conflitos. ❌
-23. Permissões no servidor refletindo o RBAC do cliente. ❌
+20. ~~Definir API (REST/Supabase/Firebase) com endpoints de electors, users, polls, agenda.~~ ✅ (Supabase: `supabase/schema.sql` com tabelas `profiles` + `electors`, índices, triggers de `updated_at` e criação automática de perfil)
+21. ~~Autenticação com detecção CPF/e-mail, máscara e validação no LoginScreen.~~ ✅ (`authenticate()` async tenta Supabase Auth, CPF vira email virtual `{digits}@cpf.politiqui`, fallback para mock)
+22. ~~Sincronização bidirecional com resolução de conflitos.~~ ✅ (`syncService.ts`: push last-write-wins por entityId → pull diff desde `lastSyncAt`; `updatedAt` em cada eleitor)
+23. ~~Permissões no servidor refletindo o RBAC do cliente.~~ ✅ (RLS no Supabase: captador vê só os próprios; coord_regional vê equipe; coord_geral/liderança vêm tudo)
 
 ### Nível 8 — Qualidade
 24. Testes unitários do rbac.ts e dos reducers de eleitores. ❌

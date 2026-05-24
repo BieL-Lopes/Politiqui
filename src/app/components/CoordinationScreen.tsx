@@ -1,11 +1,12 @@
 import { useState } from 'react';
 import { Users, Target, Download, ChevronDown, ChevronRight, UserCheck, Calendar } from 'lucide-react';
-import { User, MOCK_USERS } from '../lib/auth';
+import { User } from '../lib/auth';
 import { ElectorData } from './CaptureForm';
 
 interface Props {
   user: User;
   electors: ElectorData[];
+  users: User[];
   canExport: boolean;
 }
 
@@ -25,7 +26,7 @@ function exportCSV(rows: Record<string, string | number>[], filename: string) {
   a.click();
 }
 
-export function CoordinationScreen({ user, electors, canExport }: Props) {
+export function CoordinationScreen({ user, electors, users, canExport }: Props) {
   const [expanded, setExpanded] = useState<string | null>(null);
 
   const countByCaptador = (captadorId: string) =>
@@ -46,7 +47,7 @@ export function CoordinationScreen({ user, electors, canExport }: Props) {
 
   // ── Coordenador Regional: mostra seus próprios captadores ──
   if (user.role === 'coordenador_regional') {
-    const captadores = MOCK_USERS.filter(u => u.coordenadorRegionalId === user.id);
+    const captadores = users.filter(u => u.coordenadorRegionalId === user.id);
     const total = captadores.reduce((s, c) => s + countByCaptador(c.id), 0);
 
     const handleExport = () => {
@@ -131,19 +132,19 @@ export function CoordinationScreen({ user, electors, canExport }: Props) {
   }
 
   // ── Coordenador Geral / Liderança: drill-down regiao → captadores ──
-  const regionalCoords = MOCK_USERS.filter(u =>
+  const regionalCoords = users.filter(u =>
     u.role === 'coordenador_regional' &&
     (user.role === 'lideranca' || (user.deputadoId && u.deputadoId === user.deputadoId))
   );
 
-  const allCaptadores = MOCK_USERS.filter(u => u.role === 'captador_votos');
+  const allCaptadores = users.filter(u => u.role === 'captador_votos');
   const grandTotal = electors.length;
   const grandTarget = allCaptadores.length * META_POR_CAPTADOR;
 
   const handleExportGeral = () => {
     const rows: Record<string, string | number>[] = [];
     regionalCoords.forEach(rc => {
-      const captadores = MOCK_USERS.filter(u => u.coordenadorRegionalId === rc.id);
+      const captadores = users.filter(u => u.coordenadorRegionalId === rc.id);
       captadores.forEach(c => {
         rows.push({
           regiao: rc.regiao ?? '',
@@ -201,7 +202,7 @@ export function CoordinationScreen({ user, electors, canExport }: Props) {
         {/* Drill-down por região */}
         <div className="space-y-2">
           {regionalCoords.map(rc => {
-            const captadores = MOCK_USERS.filter(u => u.coordenadorRegionalId === rc.id);
+            const captadores = users.filter(u => u.coordenadorRegionalId === rc.id);
             const regionTotal = captadores.reduce((s, c) => s + countByCaptador(c.id), 0);
             const regionTarget = captadores.length * META_POR_CAPTADOR;
             const regionPct = regionTarget > 0 ? Math.round((regionTotal / regionTarget) * 100) : 0;

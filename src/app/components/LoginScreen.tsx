@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { User as UserIcon, Lock, Eye, EyeOff, AtSign, CreditCard } from 'lucide-react';
-import { User, authenticateMock } from '../lib/auth';
+import { User, authenticate } from '../lib/auth';
 
 interface LoginScreenProps {
   onLogin: (user: User) => void;
@@ -42,6 +42,7 @@ export function LoginScreen({ onLogin }: LoginScreenProps) {
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [fieldError, setFieldError] = useState('');
+  const [loading, setLoading] = useState(false);
 
   const inputType = detectInputType(login);
 
@@ -66,7 +67,7 @@ export function LoginScreen({ onLogin }: LoginScreenProps) {
     }
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
     setFieldError('');
@@ -84,13 +85,19 @@ export function LoginScreen({ onLogin }: LoginScreenProps) {
       if (err) { setFieldError(err); return; }
     }
 
-    const user = authenticateMock(login, password);
-    if (!user) {
-      setError('CPF/e-mail ou senha incorretos');
-      return;
+    setLoading(true);
+    try {
+      const user = await authenticate(login, password);
+      if (!user) {
+        setError('CPF/e-mail ou senha incorretos');
+        return;
+      }
+      onLogin(user);
+    } catch {
+      setError('Erro ao conectar. Tente novamente.');
+    } finally {
+      setLoading(false);
     }
-
-    onLogin(user);
   };
 
   return (
@@ -184,9 +191,10 @@ export function LoginScreen({ onLogin }: LoginScreenProps) {
             {/* Botão Entrar */}
             <button
               type="submit"
-              className="w-full bg-blue-600 hover:bg-blue-700 text-white py-4 rounded-xl text-lg font-semibold shadow-lg hover:shadow-xl transition-all active:scale-98"
+              disabled={loading}
+              className="w-full bg-blue-600 hover:bg-blue-700 disabled:opacity-60 text-white py-4 rounded-xl text-lg font-semibold shadow-lg hover:shadow-xl transition-all active:scale-98"
             >
-              Entrar
+              {loading ? 'Entrando...' : 'Entrar'}
             </button>
 
             {/* Link Esqueci Senha */}
