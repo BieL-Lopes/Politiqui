@@ -16,6 +16,7 @@ import { Tab, getAllowedTabs, getPermissions, ROLE_LABELS } from './lib/rbac';
 import { User, signOut } from './lib/auth';
 import { supabase, isSupabaseConfigured } from './lib/supabase';
 import { db } from './lib/db';
+import { pushPendingChanges } from './lib/syncService';
 import { useSync } from './lib/useSync';
 
 type Screen = 'login' | 'home' | 'form' | 'list' | 'profile' | 'agenda' | 'polls' | 'coordination' | 'admin';
@@ -142,6 +143,7 @@ export default function App() {
       payload: newElector,
       timestamp: new Date().toISOString(),
     });
+    if (isOnline && isSupabaseConfigured) await pushPendingChanges();
     await refreshCount();
     setElectors(prev => [newElector, ...prev]);
     setCurrentScreen('home');
@@ -155,6 +157,7 @@ export default function App() {
       entityId: id,
       timestamp: new Date().toISOString(),
     });
+    if (isOnline && isSupabaseConfigured) await pushPendingChanges();
     await refreshCount();
     setElectors(prev => prev.filter(e => e.id !== id));
     toast.success('Contato excluído');
@@ -174,6 +177,7 @@ export default function App() {
       payload: updated,
       timestamp: new Date().toISOString(),
     });
+    if (isOnline && isSupabaseConfigured) await pushPendingChanges();
     await refreshCount();
     setElectors(prev => prev.map(e => e.id === updated.id ? updated : e));
     setSelectedElector(updated);
@@ -194,6 +198,7 @@ export default function App() {
       payload: updated,
       timestamp: new Date().toISOString(),
     });
+    if (isOnline && isSupabaseConfigured) await pushPendingChanges();
     await refreshCount();
     setElectors(prev => prev.map(e => e.id === updated.id ? updated : e));
     setSelectedElector(updated);

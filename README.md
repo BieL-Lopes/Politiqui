@@ -323,13 +323,13 @@ Acesse `http://<IP-local>:3000` no celular (mesma rede Wi-Fi).
 
 **Checklist:**
 
-- [ ] **Instalação:** Chrome exibe banner "Adicionar à tela inicial" → ícone aparece na home
+- [X] **Instalação:** Chrome exibe banner "Adicionar à tela inicial" → ícone aparece na home
 - [ ] **Splash screen:** abre com tela de carregamento estilizada
-- [ ] **Login por CPF:** digitar `00000000005`, senha `1234` → login bem-sucedido
-- [ ] **Login por e-mail:** digitar `rafael@politiqui.com`, senha `1234` → login bem-sucedido
-- [ ] **Cadastro de eleitor:** preencher todos os campos → salvar → aparece na lista
-- [ ] **Escaneamento QR:** abre câmera → lê QR de outro dispositivo → preenche título
+- [X] **Login por CPF:** digitar `00000000005`, senha `1234` → login bem-sucedido
+- [X] **Login por e-mail:** digitar `rafael@politiqui.com`, senha `1234` → login bem-sucedido
+- [X] **Cadastro de eleitor:** preencher todos os campos → salvar → aparece na lista
+- [X] **Escaneamento QR:** abre câmera → lê QR de outro dispositivo → preenche título
 - [ ] **Modo avião:** ativar no celular → cadastrar eleitor → badge de pendentes aparece
 - [ ] **Sync:** desativar modo avião → badge some → eleitor visível no Supabase Dashboard
-- [ ] **Permissões de papel:** logar como `marcos@politiqui.com` (Eleitor) → aba Contatos não aparece
+- [X] **Permissões de papel:** logar como `marcos@politiqui.com` (Eleitor) → aba Contatos não aparece
 - [ ] **Offline total:** fechar app → modo avião → reabrir → dados anteriores exibidos
