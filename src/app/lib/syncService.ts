@@ -27,6 +27,7 @@ function toRow(e: ElectorData): Record<string, unknown> {
     observacoes: e.observacoes,
     regiao: e.regiao ?? null,
     atendimentos: e.atendimentos,
+    criado_por: e.createdBy || null,
     criado_por_nome: e.createdByName ?? null,
     data_cadastro: e.dataCadastro,
   };
