@@ -53,8 +53,20 @@ export default function App() {
     const loadData = async () => {
       const savedUser = localStorage.getItem('politiqui_user');
       if (savedUser) {
-        setUser(JSON.parse(savedUser));
-        setCurrentScreen('home');
+        // Valida que existe uma sessão Supabase ativa para o projeto atual
+        let sessionValid = true;
+        if (isSupabaseConfigured && supabase) {
+          const { data: { session } } = await supabase.auth.getSession();
+          if (!session) {
+            // Sessão expirada ou de projeto diferente — força novo login
+            localStorage.removeItem('politiqui_user');
+            sessionValid = false;
+          }
+        }
+        if (sessionValid) {
+          setUser(JSON.parse(savedUser));
+          setCurrentScreen('home');
+        }
       }
 
       // Migração one-time: move dados do localStorage para IndexedDB
@@ -349,6 +361,11 @@ export default function App() {
       <HomeScreen
         userName={user?.name || 'Usuario'}
         totalCadastros={electors.length}
+        votoStats={{
+          forte: electors.filter(e => e.nivelVoto === 'forte').length,
+          medio: electors.filter(e => e.nivelVoto === 'medio').length,
+          fraco: electors.filter(e => e.nivelVoto === 'fraco').length,
+        }}
         onNavigate={setCurrentScreen}
         onLogout={handleLogout}
         userRole={user?.role || 'eleitor'}

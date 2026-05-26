@@ -12,6 +12,7 @@ interface Activity {
 interface HomeScreenProps {
   userName: string;
   totalCadastros: number;
+  votoStats?: { forte: number; medio: number; fraco: number };
   onNavigate: (screen: 'form' | 'list' | 'agenda') => void;
   onLogout: () => void;
   userRole: UserRole;
@@ -35,14 +36,13 @@ const MOCK_ACTIVITIES: Activity[] = [
   }
 ];
 
-export function HomeScreen({ userName, totalCadastros, onNavigate, onLogout, userRole }: HomeScreenProps) {
+export function HomeScreen({ userName, totalCadastros, votoStats, onNavigate, onLogout, userRole }: HomeScreenProps) {
   const permissions = getPermissions(userRole);
-  
-  // Dados mockados para o gráfico de rosca (hardcoded: 1 cadastro na categoria Fortes)
+
   const votoData = [
-    { name: 'Fortes', value: 1, color: '#16a34a' }, // green-600
-    { name: 'Médios', value: 0, color: '#eab308' }, // yellow-500
-    { name: 'Fracos', value: 0, color: '#dc2626' } // red-600
+    { name: 'Fortes', value: votoStats?.forte ?? 0, color: '#16a34a' },
+    { name: 'M\u00e9dios', value: votoStats?.medio ?? 0, color: '#eab308' },
+    { name: 'Fracos', value: votoStats?.fraco ?? 0, color: '#dc2626' },
   ];
 
   return (

@@ -129,7 +129,7 @@ export async function pullChanges(): Promise<number> {
   const { data, error } = await supabase
     .from('eleitores')
     .select('*')
-    .gt('updated_at', lastSync);
+    .gt('atualizado_em', lastSync);
 
   if (error || !data) return 0;
 
