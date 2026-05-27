@@ -51,7 +51,7 @@ CREATE TABLE IF NOT EXISTS public.eleitores (
   bairro             TEXT,
   cidade             TEXT,
   nivel_voto         TEXT CONSTRAINT eleitores_nivel_voto_check
-    CHECK (nivel_voto IN ('forte', 'medio', 'fraco')),
+    CHECK (nivel_voto IN ('forte', 'medio', 'fraco', 'indeciso', 'oposicao')),
   nivel_engajamento  TEXT CONSTRAINT eleitores_nivel_engajamento_check
     CHECK (nivel_engajamento IN ('lideranca', 'cabo_eleitoral', 'eleitor_comum')),
   nichos             TEXT[]   NOT NULL DEFAULT '{}',
@@ -186,5 +186,132 @@ CREATE POLICY "eleitores_delete" ON public.eleitores FOR DELETE USING (
   criado_por = auth.uid()
   OR get_my_role() IN ('lideranca', 'coordenador_geral')
 );
+
+-- ─────────────────────────────────────────────
+-- Tabela: agenda_itens (agenda pessoal por usuário)
+-- ─────────────────────────────────────────────
+CREATE TABLE IF NOT EXISTS public.agenda_itens (
+  id           UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  titulo       TEXT NOT NULL,
+  local        TEXT NOT NULL DEFAULT '',
+  data         DATE NOT NULL,
+  horario      TEXT NOT NULL DEFAULT '',
+  tipo         TEXT NOT NULL DEFAULT 'reuniao'
+    CHECK (tipo IN ('reuniao', 'visita')),
+  eleitor_nome TEXT,
+  criado_por   UUID REFERENCES auth.users(id) ON DELETE CASCADE,
+  created_at   TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+ALTER TABLE public.agenda_itens ENABLE ROW LEVEL SECURITY;
+
+DROP POLICY IF EXISTS "agenda_crud_proprio" ON public.agenda_itens;
+CREATE POLICY "agenda_crud_proprio" ON public.agenda_itens
+  USING (criado_por = auth.uid())
+  WITH CHECK (criado_por = auth.uid());
+
+-- ─────────────────────────────────────────────
+-- Tabela: eventos (eventos públicos para eleitores)
+-- ─────────────────────────────────────────────
+CREATE TABLE IF NOT EXISTS public.eventos (
+  id         UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  titulo     TEXT NOT NULL,
+  data       DATE NOT NULL,
+  horario    TEXT NOT NULL DEFAULT '',
+  local      TEXT NOT NULL DEFAULT '',
+  criado_por UUID REFERENCES auth.users(id),
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+ALTER TABLE public.eventos ENABLE ROW LEVEL SECURITY;
+
+DROP POLICY IF EXISTS "eventos_select_all"      ON public.eventos;
+DROP POLICY IF EXISTS "eventos_insert_gestores" ON public.eventos;
+DROP POLICY IF EXISTS "eventos_delete_gestores" ON public.eventos;
+
+CREATE POLICY "eventos_select_all"      ON public.eventos FOR SELECT
+  USING (auth.role() = 'authenticated');
+CREATE POLICY "eventos_insert_gestores" ON public.eventos FOR INSERT
+  WITH CHECK (get_my_role() IN ('lideranca', 'coordenador_geral', 'coordenador_regional'));
+CREATE POLICY "eventos_delete_gestores" ON public.eventos FOR DELETE
+  USING (get_my_role() IN ('lideranca', 'coordenador_geral') OR criado_por = auth.uid());
+
+-- ─────────────────────────────────────────────
+-- Tabela: evento_confirmacoes (presença em eventos)
+-- ─────────────────────────────────────────────
+CREATE TABLE IF NOT EXISTS public.evento_confirmacoes (
+  id         UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  evento_id  UUID NOT NULL REFERENCES public.eventos(id) ON DELETE CASCADE,
+  eleitor_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  UNIQUE (evento_id, eleitor_id)
+);
+
+ALTER TABLE public.evento_confirmacoes ENABLE ROW LEVEL SECURITY;
+
+DROP POLICY IF EXISTS "confirmacoes_select_proprio"  ON public.evento_confirmacoes;
+DROP POLICY IF EXISTS "confirmacoes_insert_proprio"  ON public.evento_confirmacoes;
+DROP POLICY IF EXISTS "confirmacoes_delete_proprio"  ON public.evento_confirmacoes;
+DROP POLICY IF EXISTS "confirmacoes_select_gestores" ON public.evento_confirmacoes;
+
+CREATE POLICY "confirmacoes_select_proprio"  ON public.evento_confirmacoes FOR SELECT
+  USING (eleitor_id = auth.uid());
+CREATE POLICY "confirmacoes_select_gestores" ON public.evento_confirmacoes FOR SELECT
+  USING (get_my_role() IN ('lideranca', 'coordenador_geral', 'coordenador_regional'));
+CREATE POLICY "confirmacoes_insert_proprio"  ON public.evento_confirmacoes FOR INSERT
+  WITH CHECK (eleitor_id = auth.uid());
+CREATE POLICY "confirmacoes_delete_proprio"  ON public.evento_confirmacoes FOR DELETE
+  USING (eleitor_id = auth.uid());
+
+-- ─────────────────────────────────────────────
+-- Tabela: enquetes (pesquisas de opinião)
+-- ─────────────────────────────────────────────
+CREATE TABLE IF NOT EXISTS public.enquetes (
+  id         UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  titulo     TEXT NOT NULL,
+  opcoes     TEXT[] NOT NULL DEFAULT '{}',
+  status     TEXT NOT NULL DEFAULT 'ativa'
+    CHECK (status IN ('ativa', 'encerrada')),
+  criado_por UUID REFERENCES auth.users(id),
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+ALTER TABLE public.enquetes ENABLE ROW LEVEL SECURITY;
+
+DROP POLICY IF EXISTS "enquetes_select_all"     ON public.enquetes;
+DROP POLICY IF EXISTS "enquetes_insert_gestores" ON public.enquetes;
+DROP POLICY IF EXISTS "enquetes_update_gestores" ON public.enquetes;
+
+CREATE POLICY "enquetes_select_all"      ON public.enquetes FOR SELECT
+  USING (auth.role() = 'authenticated');
+CREATE POLICY "enquetes_insert_gestores" ON public.enquetes FOR INSERT
+  WITH CHECK (get_my_role() IN ('lideranca', 'coordenador_geral'));
+CREATE POLICY "enquetes_update_gestores" ON public.enquetes FOR UPDATE
+  USING (get_my_role() IN ('lideranca', 'coordenador_geral'));
+
+-- ─────────────────────────────────────────────
+-- Tabela: enquete_votos (votos por eleitor)
+-- ─────────────────────────────────────────────
+CREATE TABLE IF NOT EXISTS public.enquete_votos (
+  id              UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  enquete_id      UUID NOT NULL REFERENCES public.enquetes(id) ON DELETE CASCADE,
+  eleitor_id      UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
+  opcao_escolhida TEXT NOT NULL,
+  created_at      TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  UNIQUE (enquete_id, eleitor_id)
+);
+
+ALTER TABLE public.enquete_votos ENABLE ROW LEVEL SECURITY;
+
+DROP POLICY IF EXISTS "votos_select_proprio"  ON public.enquete_votos;
+DROP POLICY IF EXISTS "votos_insert_proprio"  ON public.enquete_votos;
+DROP POLICY IF EXISTS "votos_select_gestores" ON public.enquete_votos;
+
+CREATE POLICY "votos_select_proprio"  ON public.enquete_votos FOR SELECT
+  USING (eleitor_id = auth.uid());
+CREATE POLICY "votos_select_gestores" ON public.enquete_votos FOR SELECT
+  USING (get_my_role() IN ('lideranca', 'coordenador_geral'));
+CREATE POLICY "votos_insert_proprio"  ON public.enquete_votos FOR INSERT
+  WITH CHECK (eleitor_id = auth.uid());
 
 

@@ -1,9 +1,11 @@
-import { useState } from 'react';
-import { Plus, Calendar, Clock, MapPin, Users, Trash2 } from 'lucide-react';
+﻿import { useState, useEffect } from 'react';
+import { Plus, Calendar, Clock, MapPin, Users, Trash2, Loader2 } from 'lucide-react';
+import { User } from '../lib/auth';
+import { supabase, isSupabaseConfigured } from '../lib/supabase';
 
 interface Activity {
   id: string;
-  date: string;
+  date: string;   // 'YYYY-MM-DD'
   time: string;
   title: string;
   location: string;
@@ -11,48 +13,110 @@ interface Activity {
   electorName?: string;
 }
 
-export function AgendaScreen() {
-  const [activities, setActivities] = useState<Activity[]>([
-    {
-      id: '1',
-      date: new Date().toISOString(),
-      time: '14:00',
-      title: 'Reunião com Liderança do Bairro Centro',
-      location: 'Salão Comunitário',
-      type: 'reuniao'
-    },
-    {
-      id: '2',
-      date: new Date().toISOString(),
-      time: '16:30',
-      title: 'Visita na casa do eleitor João da Silva',
-      location: 'Rua das Flores, 123',
-      type: 'visita',
-      electorName: 'João da Silva'
+interface AgendaScreenProps {
+  user: User;
+}
+
+export function AgendaScreen({ user }: AgendaScreenProps) {
+  const [activities, setActivities] = useState<Activity[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [showForm, setShowForm] = useState(false);
+  const [saving, setSaving] = useState(false);
+
+  // Form state
+  const [formType, setFormType] = useState<'reuniao' | 'visita'>('reuniao');
+  const [formTitle, setFormTitle] = useState('');
+  const [formLocation, setFormLocation] = useState('');
+  const [formDate, setFormDate] = useState(new Date().toISOString().split('T')[0]);
+  const [formTime, setFormTime] = useState('');
+
+  useEffect(() => { fetchActivities(); }, []);
+
+  const fetchActivities = async () => {
+    setLoading(true);
+    if (isSupabaseConfigured && supabase) {
+      const { data } = await supabase
+        .from('agenda_itens')
+        .select('*')
+        .eq('criado_por', user.id)
+        .order('data', { ascending: true });
+      if (data) {
+        setActivities(data.map((row: Record<string, unknown>) => ({
+          id: row.id as string,
+          date: row.data as string,
+          time: row.horario as string,
+          title: row.titulo as string,
+          location: row.local as string,
+          type: row.tipo as 'reuniao' | 'visita',
+          electorName: (row.eleitor_nome as string) ?? undefined,
+        })));
+      }
     }
-  ]);
+    setLoading(false);
+  };
 
-  const [showNewActivity, setShowNewActivity] = useState(false);
+  const handleSave = async () => {
+    if (!formTitle.trim()) { alert('Digite o título da atividade'); return; }
+    if (!formDate) { alert('Selecione a data'); return; }
+    setSaving(true);
 
-  const handleDeleteActivity = (id: string) => {
+    const newActivity: Activity = {
+      id: `local-${Date.now()}`,
+      date: formDate,
+      time: formTime,
+      title: formTitle.trim(),
+      location: formLocation.trim(),
+      type: formType,
+    };
+
+    if (isSupabaseConfigured && supabase) {
+      const { data } = await supabase
+        .from('agenda_itens')
+        .insert({
+          titulo: formTitle.trim(),
+          local: formLocation.trim(),
+          data: formDate,
+          horario: formTime,
+          tipo: formType,
+          criado_por: user.id,
+        })
+        .select()
+        .single();
+      if (data) newActivity.id = data.id as string;
+    }
+
+    setActivities(prev =>
+      [...prev, newActivity].sort((a, b) => a.date.localeCompare(b.date))
+    );
+    setFormTitle('');
+    setFormLocation('');
+    setFormTime('');
+    setFormType('reuniao');
+    setFormDate(new Date().toISOString().split('T')[0]);
+    setShowForm(false);
+    setSaving(false);
+  };
+
+  const handleDelete = async (id: string) => {
+    if (!confirm('Deseja excluir esta atividade?')) return;
+    if (isSupabaseConfigured && supabase) {
+      await supabase.from('agenda_itens').delete().eq('id', id);
+    }
     setActivities(prev => prev.filter(a => a.id !== id));
   };
 
   const formatDate = (dateString: string) => {
-    const date = new Date(dateString);
+    const date = new Date(dateString + 'T12:00:00');
     return date.toLocaleDateString('pt-BR', {
       weekday: 'long',
       day: '2-digit',
-      month: 'long'
+      month: 'long',
     });
   };
 
-  const groupedActivities = activities.reduce((acc, activity) => {
-    const dateKey = new Date(activity.date).toDateString();
-    if (!acc[dateKey]) {
-      acc[dateKey] = [];
-    }
-    acc[dateKey].push(activity);
+  const grouped = activities.reduce((acc, a) => {
+    if (!acc[a.date]) acc[a.date] = [];
+    acc[a.date].push(a);
     return acc;
   }, {} as Record<string, Activity[]>);
 
@@ -67,58 +131,88 @@ export function AgendaScreen() {
       <div className="p-4 space-y-4">
         {/* Botão Nova Atividade */}
         <button
-          onClick={() => setShowNewActivity(!showNewActivity)}
+          onClick={() => setShowForm(!showForm)}
           className="w-full bg-blue-600 hover:bg-blue-700 text-white py-4 px-6 rounded-xl font-semibold shadow-lg flex items-center justify-center transition-all"
         >
           <Plus className="w-5 h-5 mr-2" />
           Nova Atividade
         </button>
 
-        {/* Formulário Nova Atividade */}
-        {showNewActivity && (
+        {/* Formulário */}
+        {showForm && (
           <div className="bg-white rounded-xl shadow-lg p-5 border-2 border-blue-200">
             <h3 className="font-bold text-gray-900 mb-4">Criar Nova Atividade</h3>
 
             <div className="space-y-3">
+              {/* Tipo */}
               <div className="grid grid-cols-2 gap-3">
-                <button className="py-3 px-4 rounded-lg border-2 border-purple-600 bg-purple-50 text-purple-700 font-semibold">
-                  🤝 Reunião
+                <button
+                  type="button"
+                  onClick={() => setFormType('reuniao')}
+                  className={`py-3 px-4 rounded-lg border-2 font-semibold transition-colors ${
+                    formType === 'reuniao'
+                      ? 'border-purple-600 bg-purple-50 text-purple-700'
+                      : 'border-gray-300 bg-white text-gray-700'
+                  }`}
+                >
+                  Reunião
                 </button>
-                <button className="py-3 px-4 rounded-lg border-2 border-gray-300 bg-white text-gray-700 font-semibold">
-                  🏠 Visita
+                <button
+                  type="button"
+                  onClick={() => setFormType('visita')}
+                  className={`py-3 px-4 rounded-lg border-2 font-semibold transition-colors ${
+                    formType === 'visita'
+                      ? 'border-green-600 bg-green-50 text-green-700'
+                      : 'border-gray-300 bg-white text-gray-700'
+                  }`}
+                >
+                  Visita
                 </button>
               </div>
 
               <input
                 type="text"
                 placeholder="Título da atividade"
+                value={formTitle}
+                onChange={e => setFormTitle(e.target.value)}
                 className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:border-blue-600 focus:outline-none"
               />
 
               <input
                 type="text"
                 placeholder="Local"
+                value={formLocation}
+                onChange={e => setFormLocation(e.target.value)}
                 className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:border-blue-600 focus:outline-none"
               />
 
               <div className="grid grid-cols-2 gap-3">
                 <input
                   type="date"
+                  value={formDate}
+                  onChange={e => setFormDate(e.target.value)}
                   className="px-4 py-3 border-2 border-gray-300 rounded-lg focus:border-blue-600 focus:outline-none"
                 />
                 <input
                   type="time"
+                  value={formTime}
+                  onChange={e => setFormTime(e.target.value)}
                   className="px-4 py-3 border-2 border-gray-300 rounded-lg focus:border-blue-600 focus:outline-none"
                 />
               </div>
 
               <div className="flex gap-2">
-                <button className="flex-1 bg-blue-600 text-white py-3 rounded-lg font-semibold">
+                <button
+                  onClick={handleSave}
+                  disabled={saving}
+                  className="flex-1 bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white py-3 rounded-lg font-semibold flex items-center justify-center gap-2"
+                >
+                  {saving && <Loader2 className="w-4 h-4 animate-spin" />}
                   Salvar
                 </button>
                 <button
-                  onClick={() => setShowNewActivity(false)}
-                  className="px-6 bg-gray-200 text-gray-700 py-3 rounded-lg font-semibold"
+                  onClick={() => setShowForm(false)}
+                  className="px-6 bg-gray-200 hover:bg-gray-300 text-gray-700 py-3 rounded-lg font-semibold"
                 >
                   Cancelar
                 </button>
@@ -127,23 +221,27 @@ export function AgendaScreen() {
           </div>
         )}
 
-        {/* Lista de Atividades */}
-        {Object.entries(groupedActivities).length === 0 ? (
+        {/* Lista */}
+        {loading ? (
+          <div className="flex items-center justify-center py-12">
+            <Loader2 className="w-8 h-8 animate-spin text-blue-400" />
+          </div>
+        ) : Object.keys(grouped).length === 0 ? (
           <div className="text-center py-12 bg-white rounded-xl">
             <Calendar className="w-16 h-16 mx-auto mb-4 text-gray-300" />
             <p className="text-gray-600">Nenhuma atividade agendada</p>
             <p className="text-sm text-gray-500 mt-1">Crie sua primeira visita ou reunião</p>
           </div>
         ) : (
-          Object.entries(groupedActivities).map(([dateKey, dateActivities]) => (
-            <div key={dateKey}>
+          Object.entries(grouped).map(([date, dayActivities]) => (
+            <div key={date}>
               <h3 className="font-bold text-gray-900 mb-3 flex items-center capitalize">
                 <Calendar className="w-5 h-5 mr-2 text-blue-600" />
-                {formatDate(dateActivities[0].date)}
+                {formatDate(date)}
               </h3>
 
               <div className="space-y-3 mb-6">
-                {dateActivities.map(activity => (
+                {dayActivities.map(activity => (
                   <div
                     key={activity.id}
                     className="bg-white rounded-xl shadow p-4 border-l-4 border-blue-600"
@@ -154,22 +252,18 @@ export function AgendaScreen() {
                           <Clock className="w-6 h-6 text-blue-600" />
                         </div>
                         <div>
-                          <p className="font-bold text-blue-600">{activity.time}</p>
+                          <p className="font-bold text-blue-600">{activity.time || '--:--'}</p>
                           <span className={`inline-block px-2 py-0.5 rounded text-xs font-semibold ${
                             activity.type === 'reuniao'
                               ? 'bg-purple-100 text-purple-700'
                               : 'bg-green-100 text-green-700'
                           }`}>
-                            {activity.type === 'reuniao' ? '🤝 Reunião' : '🏠 Visita'}
+                            {activity.type === 'reuniao' ? 'Reunião' : 'Visita'}
                           </span>
                         </div>
                       </div>
                       <button
-                        onClick={() => {
-                          if (confirm('Deseja excluir esta atividade?')) {
-                            handleDeleteActivity(activity.id);
-                          }
-                        }}
+                        onClick={() => handleDelete(activity.id)}
                         className="p-2 text-red-600 hover:bg-red-50 rounded-lg"
                       >
                         <Trash2 className="w-5 h-5" />
@@ -179,10 +273,12 @@ export function AgendaScreen() {
                     <p className="font-semibold text-gray-900 mb-2">{activity.title}</p>
 
                     <div className="space-y-1 text-sm text-gray-600">
-                      <div className="flex items-center">
-                        <MapPin className="w-4 h-4 mr-2 text-gray-400" />
-                        <span>{activity.location}</span>
-                      </div>
+                      {activity.location && (
+                        <div className="flex items-center">
+                          <MapPin className="w-4 h-4 mr-2 text-gray-400" />
+                          <span>{activity.location}</span>
+                        </div>
+                      )}
                       {activity.electorName && (
                         <div className="flex items-center">
                           <Users className="w-4 h-4 mr-2 text-gray-400" />

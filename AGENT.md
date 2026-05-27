@@ -10,7 +10,7 @@
 
 **Nome:** Politiqui  
 **Descrição:** Sistema de captação de eleitores para campanhas políticas.  
-**Estágio atual:** Frontend em React com dados mockados via `localStorage` (sem backend real ainda).  
+**Estágio atual:** PWA funcional com autenticação real via Supabase, IndexedDB (Dexie) offline-first e sincronização bidirecional. Telas de Agenda, Enquetes e ElectorHome integradas ao Supabase.  
 **Plataforma:** Web (React PWA) — futura versão mobile (a definir).
 
 ---
@@ -29,16 +29,20 @@
 - **Gráficos:** Recharts 2.15.2
 - **QR Code (geração):** `qrcode.react` → `QRCodeSVG`
 - **QR Code (leitura):** `html5-qrcode` → `Html5Qrcode`
-- **Persistência:** `localStorage` (chaves: `politiqui_user`, `politiqui_electors`)
+- **Persistência local:** IndexedDB via Dexie (`src/app/lib/db.ts`) — tabelas `electors` e `pendingChanges`; migração one-time do `localStorage` na inicialização
+- **Supabase client:** `src/app/lib/supabase.ts` — usado diretamente nos componentes de tela (AgendaScreen, PollsScreen, ElectorHomeScreen) e no syncService
+- **Legacy:** `localStorage` apenas para sessão do usuário (`politiqui_user`)
 - **Pacotes:** pnpm workspace (mas usar `npm` no terminal — pnpm não disponível no ambiente)
 - **Dev server:** `npm run dev`
 
-### Backend (planejado — ainda não implementado)
+### Backend (implementado)
 - **Plataforma:** Supabase
 - **Banco de dados:** PostgreSQL (via Supabase)
-- **Autenticação:** Supabase Auth (JWT com roles no `user_metadata`)
+- **Autenticação:** Supabase Auth — CPF vira email virtual `{digits}@cpf.politiqui`; fallback para mock em desenvolvimento
 - **API:** REST gerada automaticamente pelo Supabase
 - **Controle de acesso:** Row Level Security (RLS) no PostgreSQL
+- **Schema:** `supabase/schema.sql` — tabelas: `perfis`, `eleitores`, `agenda_itens`, `eventos`, `evento_confirmacoes`, `enquetes`, `enquete_votos`
+- **Sync:** `src/app/lib/syncService.ts` — push last-write-wins por `entityId` + pull diff desde `lastSyncAt`
 
 ### Infraestrutura / Deploy
 - **Build:** Docker (multi-stage)
@@ -105,7 +109,7 @@ interface ElectorData {
   endereco?: string
   cpf?: string
   dataNascimento?: string
-  nivelVoto?: 'certo' | 'provável' | 'incerto'
+  nivelVoto?: 'forte' | 'medio' | 'fraco' | 'indeciso' | 'oposicao'
   nicho?: string
   tituloEleitor?: string   // 12 dígitos, validado no form
   createdAt: string
@@ -162,15 +166,18 @@ interface User {
 
 ---
 
-## 6. Autenticação (Mock — fase atual)
+## 6. Autenticação (Supabase + fallback mock)
 
 Implementado em `src/app/lib/auth.ts`.
 
 ```ts
-// Credenciais mock: CPF formato '000.000.000-0X' ou email 'nome@politiqui.com', senha '1234'
-authenticateMock(login: string, password: string): User | null
+// Tenta Supabase Auth; se VITE_SUPABASE_URL não estiver configurada, usa mock
+authenticate(login: string, password: string): Promise<User | null>
 
-// Usuários mock disponíveis (id, nome, role, regiao?, deputadoId?, coordenadorRegionalId?)
+// CPF é convertido para email virtual: '123.456.789-00' → '12345678900@cpf.politiqui'
+authenticateMock(login: string, password: string): User | null  // fallback
+
+// Usuários mock disponíveis (usado quando Supabase não está configurado)
 MOCK_USERS: User[]
 
 // Retorna string legível para exibição (ex: "Coordenador Regional • Centro")
@@ -178,7 +185,7 @@ getUserLabel(user: User): string
 ```
 
 - O login aceita CPF **ou** e-mail — sem seletor de papel visível.
-- Em produção, substituir `authenticateMock` por chamada ao Supabase Auth.
+- Em produção com Supabase configurado, `authenticate()` é assíncrona e usa Supabase Auth.
 - Sessão persistida em `localStorage` na chave `politiqui_user`.
 
 ---
@@ -256,24 +263,29 @@ import { QRCodeSVG } from 'qrcode.react'
 
 ---
 
-## 10. Padrão de Persistência (localStorage)
+## 10. Padrão de Persistência
 
+### IndexedDB (Dexie) — fonte primária para eleitores
 ```ts
-// Salvar eleitores
-localStorage.setItem('politiqui_electors', JSON.stringify(electors))
-
-// Carregar eleitores (com migração para campos novos)
-const saved = JSON.parse(localStorage.getItem('politiqui_electors') ?? '[]')
-const migrated = saved.map((e: ElectorData) => ({
-  createdBy: e.createdBy ?? 'unknown',
-  createdByName: e.createdByName ?? 'Usuário',
-  regiao: e.regiao ?? '',
-  ...e,
-}))
+// src/app/lib/db.ts
+import Dexie from 'dexie'
+export const db = new Dexie('politiqui')
+db.version(1).stores({
+  electors: '++id, createdBy, regiao, updatedAt',
+  pendingChanges: '++id, entityId, operation, timestamp',
+})
 ```
 
-- Migração de registros antigos é feita no `useEffect` inicial de `App.tsx`.
-- Ao adicionar novos campos à `ElectorData`, sempre adicionar migração com valor padrão.
+### localStorage — apenas sessão de usuário
+```ts
+localStorage.setItem('politiqui_user', JSON.stringify(user))
+const user = JSON.parse(localStorage.getItem('politiqui_user') ?? 'null')
+```
+
+### Migração one-time (App.tsx)
+- Na inicialização, leitores do `localStorage` (`politiqui_electors`) são migrados para Dexie uma única vez.
+- Após migração, `localStorage` de eleitores é removido.
+- Ao adicionar novos campos à `ElectorData`, adicionar migração com valor padrão no `useEffect` inicial.
 
 ---
 
@@ -307,25 +319,28 @@ const migrated = saved.map((e: ElectorData) => ({
 
 ---
 
-## 12. Padrão de Integração com Supabase (quando implementado)
+## 12. Padrão de Integração com Supabase
 
 ```ts
-// src/services/eleitores.service.ts
-import { supabase } from '../lib/supabase'
+import { supabase, isSupabaseConfigured } from '../lib/supabase'
 
-export async function getEleitoresDoCaptador(captadorId: string) {
-  const { data, error } = await supabase
-    .from('eleitores')
-    .select('*')
-    .eq('captador_id', captadorId)
-  if (error) throw error
-  return data
+// Verificar antes de chamar (Supabase pode não estar configurado em dev)
+if (!isSupabaseConfigured()) {
+  // exibir dados locais / mock
+  return
 }
+
+const { data, error } = await supabase
+  .from('agenda_itens')
+  .select('*')
+  .eq('criado_por', user.id)
+if (error) { toast.error('Erro ao carregar'); return }
 ```
 
-- **Nunca** chamar `supabase` diretamente dentro de um componente.
-- Toda chamada passa por `src/services/`.
-- Tratar sempre o `error` retornado pelo Supabase.
+- Verificar **sempre** `isSupabaseConfigured()` antes de chamar para evitar crash em dev sem `.env`.
+- Tratar **sempre** o `error` retornado — exibir `toast.error` ao usuário.
+- Chamadas Supabase em telas de nível superior (AgendaScreen, PollsScreen, ElectorHomeScreen) são feitas diretamente no componente via `useEffect`.
+- Para eleitores e sync, usar `src/app/lib/syncService.ts` em vez de chamar Supabase diretamente.
 
 ---
 
@@ -354,9 +369,14 @@ export async function getEleitoresDoCaptador(captadorId: string) {
 | 3 | Exportação CSV (Admin + Coordination) + RBAC canExport | Médio | ✅ Feito |
 | 4 | CoordinationScreen KPIs reais + drill-down + AdminScreen dashboard recharts | Complexo | ✅ Feito |
 | 5 | QR Code geração (ElectorProfile) + leitura câmera (CaptureForm) | Médio | ✅ Feito |
-| 6 | IndexedDB (Dexie) + PWA (vite-plugin-pwa) + offline sync | Complexo | 🔲 Pendente |
-| 7 | Backend Supabase + autenticação real + sync bidirecional | Complexo | 🔲 Pendente |
-| 8 | Testes unitários + E2E + QA | Complexo | 🔲 Pendente |
+| 6 | IndexedDB (Dexie) + PWA (vite-plugin-pwa) + offline sync | Complexo | ✅ Feito |
+| 7 | Backend Supabase + autenticação real + sync bidirecional | Complexo | ✅ Feito |
+| 8 | Testes unitários (Vitest 30 testes) + E2E (Playwright) | Complexo | ✅ Feito |
+| 9 | Classificação nivelVoto + projeção + comparativo regiões | Médio | ✅ Feito |
+| 10 | Tela do Eleitor + AgendaScreen/PollsScreen c/ Supabase | Médio | ✅ Feito |
+| 11 | QA manual Android | Fácil | 🔲 Pendente |
+| 12 | Sistema de comunicados (9.5) | Médio | 🔲 Pendente |
+| 13 | Gamificação do captador (9.6) | Médio | 🔲 Pendente |
 
 ---
 
@@ -382,4 +402,4 @@ export async function getEleitoresDoCaptador(captadorId: string) {
 
 ---
 
-*Última atualização: 2025 — manter este arquivo sempre sincronizado com decisões do time.*
+*Última atualização: Mai/2026 — manter este arquivo sempre sincronizado com decisões do time.*

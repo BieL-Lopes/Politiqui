@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import {
   Users, Shield, Settings, ChevronRight, UserPlus, Trash2, Edit2,
-  Download, BarChart2, TrendingUp
+  Download, BarChart2, TrendingUp, Target
 } from 'lucide-react';
 import {
   BarChart, Bar, XAxis, YAxis, Tooltip, PieChart, Pie, Cell,
@@ -79,12 +79,14 @@ export function AdminScreen({ user, electors, users, canExport }: Props) {
   });
   const regiaoData = Object.entries(regiaoMap).map(([name, value]) => ({ name, value }));
 
-  const votoMap = { forte: 0, medio: 0, fraco: 0 };
-  electors.forEach(e => { if (e.nivelVoto) votoMap[e.nivelVoto]++; });
+  const votoMap = { forte: 0, medio: 0, fraco: 0, indeciso: 0, oposicao: 0 };
+  electors.forEach(e => { if (e.nivelVoto && e.nivelVoto in votoMap) votoMap[e.nivelVoto as keyof typeof votoMap]++; });
   const votoData = [
     { name: 'Forte', value: votoMap.forte, color: '#22c55e' },
     { name: 'Médio', value: votoMap.medio, color: '#eab308' },
     { name: 'Fraco', value: votoMap.fraco, color: '#ef4444' },
+    { name: 'Indeciso', value: votoMap.indeciso, color: '#94a3b8' },
+    { name: 'Oposição', value: votoMap.oposicao, color: '#7c3aed' },
   ];
 
   const nichoMap: Record<string, number> = {};
@@ -113,6 +115,31 @@ export function AdminScreen({ user, electors, users, canExport }: Props) {
     data: d.slice(5).replace('-', '/'),
     cadastros: dayCounts[d],
   }));
+
+  // Projeção de votos total
+  const projecaoTotal = Math.round(
+    votoMap.forte * 1.0 + votoMap.medio * 0.6 + votoMap.indeciso * 0.2
+  );
+
+  // Evolução cumulativa da projeção nos últimos 30 dias
+  const projecaoDayCounts: Record<string, number> = {};
+  dayLabels.forEach(k => { projecaoDayCounts[k] = 0; });
+  electors.forEach(e => {
+    const key = e.dataCadastro.split('T')[0];
+    if (key in projecaoDayCounts) {
+      const w = e.nivelVoto === 'forte' ? 1.0 : e.nivelVoto === 'medio' ? 0.6 : e.nivelVoto === 'indeciso' ? 0.2 : 0;
+      projecaoDayCounts[key] += w;
+    }
+  });
+  let cumulativeProjecao = Math.round(
+    electors
+      .filter(e => e.dataCadastro.split('T')[0] < dayLabels[0])
+      .reduce((acc, e) => acc + (e.nivelVoto === 'forte' ? 1.0 : e.nivelVoto === 'medio' ? 0.6 : e.nivelVoto === 'indeciso' ? 0.2 : 0), 0)
+  );
+  const projecaoEvolucaoData = dayLabels.map(d => {
+    cumulativeProjecao += projecaoDayCounts[d];
+    return { data: d.slice(5).replace('-', '/'), projecao: Math.round(cumulativeProjecao) };
+  });
 
   const getRoleBadgeStyle = (role: UserRole) => {
     const styles: Record<UserRole, string> = {
@@ -261,6 +288,20 @@ export function AdminScreen({ user, electors, users, canExport }: Props) {
               </div>
             ) : (
               <>
+                {/* Card destaque — Projeção de Votos */}
+                <div className="bg-gradient-to-r from-blue-600 to-blue-800 rounded-xl shadow-lg p-5 text-white">
+                  <div className="flex items-center justify-between mb-1">
+                    <p className="text-sm font-medium text-blue-200 uppercase tracking-wide">Projeção de Votos</p>
+                    <Target className="w-5 h-5 text-blue-300" />
+                  </div>
+                  <p className="text-4xl font-bold">{projecaoTotal.toLocaleString('pt-BR')}</p>
+                  <p className="text-xs text-blue-300 mt-2">
+                    forte ×1.0 &nbsp;+&nbsp; médio ×0.6 &nbsp;+&nbsp; indeciso ×0.2
+                    &nbsp;|&nbsp;
+                    {electors.length > 0 ? ((projecaoTotal / electors.length) * 100).toFixed(0) : 0}% de {electors.length} cadastros
+                  </p>
+                </div>
+
                 {/* Cards resumo */}
                 <div className="grid grid-cols-3 gap-3">
                   <div className="bg-white rounded-xl shadow p-3 text-center">
@@ -348,7 +389,22 @@ export function AdminScreen({ user, electors, users, canExport }: Props) {
                     </LineChart>
                   </ResponsiveContainer>
                 </div>
-              </>
+                {/* Evolução da Projeção de Votos */}
+                <div className="bg-white rounded-xl shadow p-4">
+                  <h2 className="font-bold text-gray-900 mb-4 flex items-center gap-2">
+                    <Target className="w-5 h-5 text-blue-600" />
+                    Evolução da Projeção — últimos 30 dias
+                  </h2>
+                  <ResponsiveContainer width="100%" height={200}>
+                    <LineChart data={projecaoEvolucaoData} margin={{ top: 0, right: 10, left: -20, bottom: 0 }}>
+                      <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
+                      <XAxis dataKey="data" tick={{ fontSize: 9 }} interval={6} />
+                      <YAxis tick={{ fontSize: 11 }} allowDecimals={false} />
+                      <Tooltip formatter={(v: number) => [v.toLocaleString('pt-BR'), 'Votos projetados']} />
+                      <Line type="monotone" dataKey="projecao" stroke="#2563eb" strokeWidth={2} dot={false} />
+                    </LineChart>
+                  </ResponsiveContainer>
+                </div>              </>
             )}
           </div>
         )}

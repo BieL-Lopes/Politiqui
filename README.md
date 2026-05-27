@@ -329,7 +329,7 @@ Acesse `http://<IP-local>:3000` no celular (mesma rede Wi-Fi).
 - [X] **Login por e-mail:** digitar `rafael@politiqui.com`, senha `1234` → login bem-sucedido
 - [X] **Cadastro de eleitor:** preencher todos os campos → salvar → aparece na lista
 - [X] **Escaneamento QR:** abre câmera → lê QR de outro dispositivo → preenche título
-- [ ] **Modo avião:** ativar no celular → cadastrar eleitor → badge de pendentes aparece
-- [ ] **Sync:** desativar modo avião → badge some → eleitor visível no Supabase Dashboard
+- [X] **Modo avião:** ativar no celular → cadastrar eleitor → badge de pendentes aparece
+- [X] **Sync:** desativar modo avião → badge some → eleitor visível no Supabase Dashboard
 - [X] **Permissões de papel:** logar como `marcos@politiqui.com` (Eleitor) → aba Contatos não aparece
-- [ ] **Offline total:** fechar app → modo avião → reabrir → dados anteriores exibidos
+- [X] **Offline total:** fechar app → modo avião → reabrir → dados anteriores exibidos

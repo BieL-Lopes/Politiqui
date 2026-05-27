@@ -18,7 +18,7 @@ export interface ElectorData {
   dataNascimento: string;
   bairro: string;
   cidade: string;
-  nivelVoto: 'forte' | 'medio' | 'fraco';
+  nivelVoto: 'forte' | 'medio' | 'fraco' | 'indeciso' | 'oposicao';
   nivelEngajamento: 'lideranca' | 'cabo_eleitoral' | 'eleitor_comum';
   nichos: string[];
   gpsLatitude?: number;
@@ -61,7 +61,7 @@ export function CaptureForm({ onBack, onSave, electorToEdit, onUpdate }: Capture
   const [dataNascimento, setDataNascimento] = useState(electorToEdit?.dataNascimento ?? '');
   const [bairro, setBairro] = useState(electorToEdit?.bairro ?? '');
   const [cidade, setCidade] = useState(electorToEdit?.cidade ?? '');
-  const [nivelVoto, setNivelVoto] = useState<'forte' | 'medio' | 'fraco' | ''>(electorToEdit?.nivelVoto ?? '');
+  const [nivelVoto, setNivelVoto] = useState<'forte' | 'medio' | 'fraco' | 'indeciso' | 'oposicao' | ''>(electorToEdit?.nivelVoto ?? '');
   const [nivelEngajamento, setNivelEngajamento] = useState<'lideranca' | 'cabo_eleitoral' | 'eleitor_comum' | ''>(electorToEdit?.nivelEngajamento ?? '');
   const [showQrScanner, setShowQrScanner] = useState(false);
   const [nichos, setNichos] = useState<string[]>(electorToEdit?.nichos ?? []);
@@ -159,7 +159,7 @@ export function CaptureForm({ onBack, onSave, electorToEdit, onUpdate }: Capture
       dataNascimento,
       bairro,
       cidade,
-      nivelVoto: nivelVoto as 'forte' | 'medio' | 'fraco',
+      nivelVoto: nivelVoto as 'forte' | 'medio' | 'fraco' | 'indeciso' | 'oposicao',
       nivelEngajamento: nivelEngajamento as 'lideranca' | 'cabo_eleitoral' | 'eleitor_comum',
       nichos,
       gpsLatitude,
@@ -371,7 +371,31 @@ export function CaptureForm({ onBack, onSave, electorToEdit, onUpdate }: Capture
                   : 'bg-red-50 text-red-700 border-red-200 hover:bg-red-100'
               }`}
             >
-              ? Voto Fraco / Indeciso
+              ✗ Voto Fraco / Em Dúvida
+            </button>
+
+            <button
+              type="button"
+              onClick={() => setNivelVoto('indeciso')}
+              className={`py-4 px-6 rounded-xl text-lg font-semibold transition-all border-3 ${
+                nivelVoto === 'indeciso'
+                  ? 'bg-slate-500 text-white border-slate-600 shadow-lg scale-105'
+                  : 'bg-slate-50 text-slate-700 border-slate-200 hover:bg-slate-100'
+              }`}
+            >
+              ? Indeciso / Não Sabe
+            </button>
+
+            <button
+              type="button"
+              onClick={() => setNivelVoto('oposicao')}
+              className={`py-4 px-6 rounded-xl text-lg font-semibold transition-all border-3 ${
+                nivelVoto === 'oposicao'
+                  ? 'bg-purple-700 text-white border-purple-800 shadow-lg scale-105'
+                  : 'bg-purple-50 text-purple-700 border-purple-200 hover:bg-purple-100'
+              }`}
+            >
+              ⛔ Oposição
             </button>
           </div>
         </div>

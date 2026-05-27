@@ -19,16 +19,20 @@ export function ContactList({ contacts, onBack, onDelete, onViewProfile }: Conta
     contact.bairro.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
-  const getNivelBadge = (nivel: 'forte' | 'medio' | 'fraco') => {
+  const getNivelBadge = (nivel: 'forte' | 'medio' | 'fraco' | 'indeciso' | 'oposicao') => {
     const styles = {
-      forte: 'bg-green-100 text-green-800 border-green-300',
-      medio: 'bg-yellow-100 text-yellow-800 border-yellow-300',
-      fraco: 'bg-red-100 text-red-800 border-red-300'
+      forte:    'bg-green-100 text-green-800 border-green-300',
+      medio:    'bg-yellow-100 text-yellow-800 border-yellow-300',
+      fraco:    'bg-red-100 text-red-800 border-red-300',
+      indeciso: 'bg-slate-100 text-slate-700 border-slate-300',
+      oposicao: 'bg-purple-100 text-purple-800 border-purple-300',
     };
     const labels = {
-      forte: 'Forte',
-      medio: 'Médio',
-      fraco: 'Fraco'
+      forte:    'Forte',
+      medio:    'Médio',
+      fraco:    'Fraco',
+      indeciso: 'Indeciso',
+      oposicao: 'Oposição',
     };
     return (
       <span className={`px-3 py-1 rounded-full text-xs font-semibold border-2 ${styles[nivel]}`}>
@@ -69,7 +73,7 @@ export function ContactList({ contacts, onBack, onDelete, onViewProfile }: Conta
       c.dataNascimento ? formatDate(c.dataNascimento) : '',
       c.bairro,
       c.cidade,
-      c.nivelVoto === 'forte' ? 'Forte' : c.nivelVoto === 'medio' ? 'Medio' : 'Fraco',
+      c.nivelVoto === 'forte' ? 'Forte' : c.nivelVoto === 'medio' ? 'Medio' : c.nivelVoto === 'fraco' ? 'Fraco' : c.nivelVoto === 'indeciso' ? 'Indeciso' : 'Oposicao',
       c.nivelEngajamento === 'lideranca' ? 'Lideranca' : c.nivelEngajamento === 'cabo_eleitoral' ? 'Cabo Eleitoral' : 'Eleitor Comum',
       (c.nichos || []).join('; '),
       c.aceitaWhatsapp ? 'Sim' : 'Nao',
@@ -92,7 +96,7 @@ export function ContactList({ contacts, onBack, onDelete, onViewProfile }: Conta
   };
 
   const exportToPDF = () => {
-    const nivelVotoLabel = (nivel: string) => nivel === 'forte' ? 'Forte' : nivel === 'medio' ? 'Medio' : 'Fraco';
+    const nivelVotoLabel = (nivel: string) => nivel === 'forte' ? 'Forte' : nivel === 'medio' ? 'Medio' : nivel === 'fraco' ? 'Fraco' : nivel === 'indeciso' ? 'Indeciso' : nivel === 'oposicao' ? 'Oposicao' : nivel;
     const nivelEngajamentoLabel = (nivel: string) => nivel === 'lideranca' ? 'Lideranca' : nivel === 'cabo_eleitoral' ? 'Cabo Eleitoral' : 'Eleitor Comum';
 
     const htmlContent = `

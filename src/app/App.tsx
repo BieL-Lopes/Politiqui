@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { LoginScreen } from './components/LoginScreen';
 import { HomeScreen } from './components/HomeScreen';
+import { ElectorHomeScreen } from './components/ElectorHomeScreen';
 import { CaptureForm, ElectorData } from './components/CaptureForm';
 import { ContactList } from './components/ContactList';
 import { ElectorProfile } from './components/ElectorProfile';
@@ -286,7 +287,7 @@ export default function App() {
     return (
       <>
         <OfflineBanner isOnline={isOnline} pendingCount={pendingCount} />
-        <AgendaScreen />
+        <AgendaScreen user={user!} />
         <BottomNav currentTab={currentTab} onTabChange={handleTabChange} userRole={user?.role || 'eleitor'} />
         <Toaster position="top-center" richColors />
       </>
@@ -297,7 +298,7 @@ export default function App() {
     return (
       <>
         <OfflineBanner isOnline={isOnline} pendingCount={pendingCount} />
-        <PollsScreen />
+        <PollsScreen user={user!} />
         <BottomNav currentTab={currentTab} onTabChange={handleTabChange} userRole={user?.role || 'eleitor'} />
         <Toaster position="top-center" richColors />
       </>
@@ -358,19 +359,25 @@ export default function App() {
   return (
     <>
       <OfflineBanner isOnline={isOnline} pendingCount={pendingCount} />
-      <HomeScreen
-        userName={user?.name || 'Usuario'}
-        totalCadastros={electors.length}
-        votoStats={{
-          forte: electors.filter(e => e.nivelVoto === 'forte').length,
-          medio: electors.filter(e => e.nivelVoto === 'medio').length,
-          fraco: electors.filter(e => e.nivelVoto === 'fraco').length,
-        }}
-        onNavigate={setCurrentScreen}
-        onLogout={handleLogout}
-        userRole={user?.role || 'eleitor'}
-      />
-      <BottomNav currentTab={currentTab} onTabChange={handleTabChange} userRole={user?.role || 'eleitor'} />
+      {user?.role === 'eleitor' ? (
+        <ElectorHomeScreen user={user} onLogout={handleLogout} />
+      ) : (
+        <>
+          <HomeScreen
+            userName={user?.name || 'Usuario'}
+            totalCadastros={electors.length}
+            votoStats={{
+              forte: electors.filter(e => e.nivelVoto === 'forte').length,
+              medio: electors.filter(e => e.nivelVoto === 'medio').length,
+              fraco: electors.filter(e => e.nivelVoto === 'fraco').length,
+            }}
+            onNavigate={setCurrentScreen}
+            onLogout={handleLogout}
+            userRole={user?.role || 'eleitor'}
+          />
+          <BottomNav currentTab={currentTab} onTabChange={handleTabChange} userRole={user?.role || 'eleitor'} />
+        </>
+      )}
       <Toaster position="top-center" richColors />
     </>
   );

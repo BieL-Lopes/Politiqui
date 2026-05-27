@@ -59,16 +59,20 @@ export function ElectorProfile({ elector, onBack, onUpdate, onEdit }: ElectorPro
     });
   };
 
-  const getNivelVotoBadge = (nivel: 'forte' | 'medio' | 'fraco') => {
+  const getNivelVotoBadge = (nivel: 'forte' | 'medio' | 'fraco' | 'indeciso' | 'oposicao') => {
     const styles = {
-      forte: 'bg-green-100 text-green-800 border-green-300',
-      medio: 'bg-yellow-100 text-yellow-800 border-yellow-300',
-      fraco: 'bg-red-100 text-red-800 border-red-300'
+      forte:    'bg-green-100 text-green-800 border-green-300',
+      medio:    'bg-yellow-100 text-yellow-800 border-yellow-300',
+      fraco:    'bg-red-100 text-red-800 border-red-300',
+      indeciso: 'bg-slate-100 text-slate-700 border-slate-300',
+      oposicao: 'bg-purple-100 text-purple-800 border-purple-300',
     };
     const labels = {
-      forte: 'Voto Forte',
-      medio: 'Voto Médio',
-      fraco: 'Voto Fraco'
+      forte:    'Voto Forte',
+      medio:    'Voto Médio',
+      fraco:    'Voto Fraco',
+      indeciso: 'Indeciso',
+      oposicao: 'Oposição',
     };
     return (
       <span className={`px-3 py-1 rounded-full text-sm font-semibold border-2 ${styles[nivel]}`}>

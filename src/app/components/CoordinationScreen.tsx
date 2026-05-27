@@ -1,7 +1,8 @@
 import { useState } from 'react';
-import { Users, Target, Download, ChevronDown, ChevronRight, UserCheck, Calendar } from 'lucide-react';
+import { Users, Target, Download, ChevronDown, ChevronRight, UserCheck, GitCompare } from 'lucide-react';
 import { User } from '../lib/auth';
 import { ElectorData } from './CaptureForm';
+import { RegionCompareScreen } from './RegionCompareScreen';
 
 interface Props {
   user: User;
@@ -28,6 +29,7 @@ function exportCSV(rows: Record<string, string | number>[], filename: string) {
 
 export function CoordinationScreen({ user, electors, users, canExport }: Props) {
   const [expanded, setExpanded] = useState<string | null>(null);
+  const [coordTab, setCoordTab] = useState<'equipe' | 'comparar'>('equipe');
 
   const countByCaptador = (captadorId: string) =>
     electors.filter(e => e.createdBy === captadorId).length;
@@ -166,6 +168,39 @@ export function CoordinationScreen({ user, electors, users, canExport }: Props) 
         <p className="text-sm text-blue-100">Visão geral da equipe</p>
       </div>
 
+      {/* Abas internas */}
+      <div className="bg-white border-b border-gray-200 px-4">
+        <div className="flex">
+          <button
+            onClick={() => setCoordTab('equipe')}
+            className={`py-3 px-4 font-medium text-sm border-b-2 transition-colors flex items-center gap-1.5 ${
+              coordTab === 'equipe' ? 'border-blue-600 text-blue-600' : 'border-transparent text-gray-500'
+            }`}
+          >
+            <Users className="w-4 h-4" />
+            Equipe
+          </button>
+          <button
+            onClick={() => setCoordTab('comparar')}
+            className={`py-3 px-4 font-medium text-sm border-b-2 transition-colors flex items-center gap-1.5 ${
+              coordTab === 'comparar' ? 'border-blue-600 text-blue-600' : 'border-transparent text-gray-500'
+            }`}
+          >
+            <GitCompare className="w-4 h-4" />
+            Comparar
+          </button>
+        </div>
+      </div>
+
+      {/* Aba Comparar */}
+      {coordTab === 'comparar' && (
+        <div className="p-4">
+          <RegionCompareScreen electors={electors} />
+        </div>
+      )}
+
+      {/* Aba Equipe */}
+      {coordTab === 'equipe' && (
       <div className="p-4 space-y-4">
         {/* Summary cards */}
         <div className="grid grid-cols-2 gap-3">
@@ -281,6 +316,7 @@ export function CoordinationScreen({ user, electors, users, canExport }: Props) 
           })}
         </div>
       </div>
+      )}
     </div>
   );
 }

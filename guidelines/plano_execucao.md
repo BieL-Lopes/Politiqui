@@ -23,8 +23,8 @@
 | Login com detecção CPF/e-mail + máscara + validação | ✅ LoginScreen.tsx |
 | Tela exclusiva do Coordenador Geral (drill-down deputado) | ✅ CoordinationScreen.tsx — drill-down por deputadoId |
 | Exportação em Admin/Coordenação + RBAC canExport | ✅ |
-| Offline-first real (PWA/IndexedDB/sync) | ❌ Só localStorage, sem service worker |
-| Backend/API + sincronização | ❌ |
+| Offline-first real (PWA/IndexedDB/sync) | ✅ Dexie + vite-plugin-pwa + fila de sync (`useSync.ts`) |
+| Backend/API + sincronização | ✅ Supabase: schema, auth, sync bidirecional, RLS |
 
 ## Plano de Execução (do mais fácil ao mais complexo)
 
@@ -47,7 +47,7 @@
 10. ~~Reformular CoordinationScreen.tsx para listar captadores da equipe com KPIs reais agrupando electors por createdBy.~~ ✅
 11. ~~Criar tela do Coordenador Geral com visão por coordenador regional → por captador (drill-down), vinculada ao deputadoId.~~ ✅
 12. ~~Dashboard de Liderança em AdminScreen com gráficos (recharts): por região, por nível de voto, por nicho, evolução por dia.~~ ✅
-> **Nível 4 100% concluído.** Próximo pendente: Nível 6 (Offline-first / PWA).
+> **Nível 4 100% concluído.**
 ### Nível 5 — QR Code ✅ CONCLUÍDO
 13. ~~Instalar qrcode.react (gerar) e html5-qrcode (ler).~~ ✅
 14. ~~Gerar QR no perfil do eleitor codificando tituloEleitor.~~ ✅
