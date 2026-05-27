@@ -17,7 +17,7 @@ import { Tab, getAllowedTabs, getPermissions, ROLE_LABELS } from './lib/rbac';
 import { User, signOut } from './lib/auth';
 import { supabase, isSupabaseConfigured } from './lib/supabase';
 import { db } from './lib/db';
-import { pushPendingChanges, resetLastSync } from './lib/syncService';
+import { pushPendingChanges, resetLastSync, pullChanges } from './lib/syncService';
 import { useSync } from './lib/useSync';
 
 type Screen = 'login' | 'home' | 'form' | 'list' | 'profile' | 'agenda' | 'polls' | 'coordination' | 'admin';
@@ -89,6 +89,13 @@ export default function App() {
       // Busca usuários do Supabase somente se já há sessão ativa
       if (savedUser) {
         await fetchUsers();
+        // Pull imediato ao carregar: garante que o app mostra dados do servidor
+        // sem precisar de page refresh (especialmente quando Dexie está vazio)
+        if (isSupabaseConfigured) {
+          await pullChanges();
+          const synced = await db.electors.orderBy('dataCadastro').reverse().toArray();
+          setElectors(synced);
+        }
       }
     };
     loadData();
