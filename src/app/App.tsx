@@ -17,7 +17,7 @@ import { Tab, getAllowedTabs, getPermissions, ROLE_LABELS } from './lib/rbac';
 import { User, signOut } from './lib/auth';
 import { supabase, isSupabaseConfigured } from './lib/supabase';
 import { db } from './lib/db';
-import { pushPendingChanges } from './lib/syncService';
+import { pushPendingChanges, resetLastSync } from './lib/syncService';
 import { useSync } from './lib/useSync';
 
 type Screen = 'login' | 'home' | 'form' | 'list' | 'profile' | 'agenda' | 'polls' | 'coordination' | 'admin';
@@ -104,6 +104,7 @@ export default function App() {
   const handleLogin = (userData: User) => {
     setUser(userData);
     localStorage.setItem('politiqui_user', JSON.stringify(userData));
+    resetLastSync(); // força pull completo na próxima sincronização
     setCurrentScreen('home');
     fetchUsers();
     // Define a primeira tab permitida para o papel do usuario

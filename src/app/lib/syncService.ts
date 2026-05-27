@@ -4,6 +4,11 @@ import type { ElectorData } from '../components/CaptureForm';
 
 const LAST_SYNC_KEY = 'politiqui_last_sync';
 
+/** Limpa o timestamp de sincronia — use no login para forçar pull completo. */
+export function resetLastSync() {
+  localStorage.removeItem(LAST_SYNC_KEY);
+}
+
 // ─────────────────────────────────────────────
 // Mappers camelCase (frontend) ↔ snake_case (Supabase)
 // ─────────────────────────────────────────────
@@ -125,7 +130,12 @@ export async function pushPendingChanges(): Promise<number> {
 export async function pullChanges(): Promise<number> {
   if (!isSupabaseConfigured || !supabase) return 0;
 
-  const lastSync = localStorage.getItem(LAST_SYNC_KEY) ?? '1970-01-01T00:00:00.000Z';
+  // Se o banco local está vazio, ignora lastSync e faz pull completo
+  const localCount = await db.electors.count();
+  const lastSync = localCount === 0
+    ? '1970-01-01T00:00:00.000Z'
+    : (localStorage.getItem(LAST_SYNC_KEY) ?? '1970-01-01T00:00:00.000Z');
+
   const { data, error } = await supabase
     .from('eleitores')
     .select('*')
