@@ -4,6 +4,7 @@ import { UserRole, getPermissions, ROLE_LABELS } from '../lib/rbac';
 import { User } from '../lib/auth';
 import { supabase, isSupabaseConfigured } from '../lib/supabase';
 import { META_DIARIA, MEDALS } from '../lib/gamification';
+import { toast } from 'sonner';
 
 interface Activity {
   id: string;
@@ -65,12 +66,31 @@ export function HomeScreen({ user, userName, totalCadastros, votoStats, onNaviga
 
   useEffect(() => {
     if (!user || !isSupabaseConfigured || !supabase) return;
+
+    // Carga inicial
     supabase
       .from('comunicados')
       .select('id, titulo, mensagem, remetente_nome, criado_em')
       .order('criado_em', { ascending: false })
       .limit(10)
       .then(({ data }) => { if (data) setComunicados(data as Comunicado[]); });
+
+    // Realtime: recebe novos comunicados sem precisar recarregar
+    const channel = supabase
+      .channel(`comunicados_home_${user.id}`)
+      .on(
+        'postgres_changes',
+        { event: 'INSERT', schema: 'public', table: 'comunicados' },
+        (payload) => {
+          const novo = payload.new as Comunicado;
+          setComunicados(prev => [novo, ...prev.slice(0, 9)]);
+          setExpandedCom(novo.id);
+          toast('📢 Novo comunicado', { description: novo.titulo });
+        }
+      )
+      .subscribe();
+
+    return () => { supabase!.removeChannel(channel); };
   }, [user?.id]);
 
   const votoData = [

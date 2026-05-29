@@ -42,9 +42,17 @@ self.addEventListener('notificationclick', (event) => {
     self.clients
       .matchAll({ type: 'window', includeUncontrolled: true })
       .then((clients) => {
-        for (const client of clients) {
-          if ('focus' in client) return client.focus();
+        // Find an existing app window and navigate it to home/comunicados
+        const appClient = clients.find(c =>
+          new URL(c.url).origin === self.location.origin
+        );
+        if (appClient) {
+          appClient.focus();
+          // Tell the React app to navigate to the comunicados section
+          appClient.postMessage({ type: 'NAVIGATE_TO_COMUNICADOS' });
+          return;
         }
+        // No window open — open a new one
         return self.clients.openWindow('/');
       })
   );

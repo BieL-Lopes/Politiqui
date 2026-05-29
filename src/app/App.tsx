@@ -126,6 +126,19 @@ export default function App() {
     }
   }, [syncedAt]);
 
+  // Ouve mensagens do Service Worker (ex: clique em notificação push)
+  useEffect(() => {
+    if (!('serviceWorker' in navigator)) return;
+    const handler = (event: MessageEvent) => {
+      if (event.data?.type === 'NAVIGATE_TO_COMUNICADOS') {
+        setCurrentScreen('home');
+        setCurrentTab('home');
+      }
+    };
+    navigator.serviceWorker.addEventListener('message', handler);
+    return () => navigator.serviceWorker.removeEventListener('message', handler);
+  }, []);
+
   const handleLogin = (userData: User) => {
     setUser(userData);
     localStorage.setItem('politiqui_user', JSON.stringify(userData));

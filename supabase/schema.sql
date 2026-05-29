@@ -343,6 +343,9 @@ CREATE POLICY "comunicados_select" ON public.comunicados FOR SELECT USING (
 CREATE POLICY "comunicados_insert" ON public.comunicados FOR INSERT
   WITH CHECK (get_my_role() IN ('lideranca', 'coordenador_geral'));
 
+-- Habilitar Realtime para esta tabela (necessário para atualizações em tempo real no app)
+ALTER PUBLICATION supabase_realtime ADD TABLE public.comunicados;
+
 -- ─────────────────────────────────────────────────────────────────────────────
 -- Tabela: push_subscriptions (assinaturas Web Push por usuário)
 -- ─────────────────────────────────────────────────────────────────────────────
