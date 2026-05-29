@@ -18,6 +18,7 @@ import { User, signOut } from './lib/auth';
 import { supabase, isSupabaseConfigured } from './lib/supabase';
 import { db } from './lib/db';
 import { pushPendingChanges, resetLastSync, pullChanges } from './lib/syncService';
+import { subscribeToPush, unsubscribeFromPush } from './lib/pushService';
 import { useSync } from './lib/useSync';
 
 type Screen = 'login' | 'home' | 'form' | 'list' | 'profile' | 'agenda' | 'polls' | 'coordination' | 'admin';
@@ -114,6 +115,7 @@ export default function App() {
     resetLastSync(); // força pull completo na próxima sincronização
     setCurrentScreen('home');
     fetchUsers();
+    subscribeToPush(userData.id); // solicita permissão push (fire-and-forget)
     // Define a primeira tab permitida para o papel do usuario
     const allowedTabs = getAllowedTabs(userData.role);
     setCurrentTab(allowedTabs[0]);
@@ -229,6 +231,7 @@ export default function App() {
   };
 
   const handleLogout = async () => {
+    if (user) unsubscribeFromPush(user.id);
     setUser(null);
     localStorage.removeItem('politiqui_user');
     await signOut();
@@ -372,6 +375,7 @@ export default function App() {
       ) : (
         <>
           <HomeScreen
+            user={user ?? undefined}
             userName={user?.name || 'Usuario'}
             totalCadastros={electors.length}
             votoStats={{

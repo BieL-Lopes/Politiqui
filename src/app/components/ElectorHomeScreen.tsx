@@ -149,7 +149,7 @@ export function ElectorHomeScreen({ user, onLogout }: Props) {
       </div>
 
       {/* Cartão de QR flutuante (sobrepõe o header) */}
-      <div className="px-4 -mt-10">
+      <div className="px-4 -mt-10 relative z-10">
         <div className="bg-white rounded-2xl shadow-lg p-5 border border-gray-100">
           <div className="flex items-center justify-between mb-3">
             <div>

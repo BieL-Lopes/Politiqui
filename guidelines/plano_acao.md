@@ -36,7 +36,7 @@
 | Tela de perfil do Eleitor (QR, enquetes, eventos) | ✅ |
 | AgendaScreen integrada ao Supabase (CRUD real) | ✅ |
 | PollsScreen integrada ao Supabase (criar/encerrar/reabrir) | ✅ |
-| Sistema de comunicados (liderança → coordenadores) | 🔲 |
+| Sistema de comunicados (liderança → coordenadores) | ✅ |
 | Gamificação do captador (ranking, medalhas, streak) | 🔲 ⭐ |
 | Comparativo entre regiões | ✅ |
 | Rota e check-in dos captadores | 🔲 ⭐ |
@@ -201,15 +201,15 @@
 
 ---
 
-#### 9.5 — Sistema de Comunicados 🔲
+#### 9.5 — Sistema de Comunicados ✅
 **Complexidade: Média** — envio de mensagens dentro do app entre perfis.
 
 > Citado como botão obrigatório na tela de Liderança e de Coordenação.
 
-- [ ] Botão "Enviar comunicado" na `AdminScreen` (Liderança → todos)
-- [ ] Botão "Enviar comunicado" na `CoordinationScreen` (Coord. Geral → coord. regionais)
-- [ ] Histórico de comunicados recebidos na home de cada perfil
-- [ ] Notificação push via PWA quando o app estiver em segundo plano
+- [x] Botão "Enviar comunicado" na `AdminScreen` (Liderança → todos)
+- [x] Botão "Enviar comunicado" na `CoordinationScreen` (Coord. Geral → coord. regionais)
+- [x] Histórico de comunicados recebidos na home de cada perfil
+- [x] Notificação push via PWA quando o app estiver em segundo plano
 
 ---
 
@@ -286,8 +286,8 @@
 ## Próximos Passos Imediatos
 
 1. **QA manual no Android** (Fase 8) — zero custo de desenvolvimento, só execução
-2. **Sistema de comunicados** (9.5) — notificações internas entre perfis
-3. **Gamificação do captador** (9.6) — aumenta produção de cadastros sem custo de aquisição
+2. **Gamificação do captador** (9.6) — aumenta produção de cadastros sem custo de aquisição
+3. **Check-in e Rota dos Captadores** (9.7) — geolocalização e mapa de cobertura
 
 ---
 

@@ -314,4 +314,54 @@ CREATE POLICY "votos_select_gestores" ON public.enquete_votos FOR SELECT
 CREATE POLICY "votos_insert_proprio"  ON public.enquete_votos FOR INSERT
   WITH CHECK (eleitor_id = auth.uid());
 
+-- ─────────────────────────────────────────────
+-- Tabela: comunicados (mensagens da liderança/coord_geral para os demais)
+-- ─────────────────────────────────────────────
+CREATE TABLE IF NOT EXISTS public.comunicados (
+  id             UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  titulo         TEXT NOT NULL,
+  mensagem       TEXT NOT NULL,
+  remetente_id   UUID REFERENCES public.perfis(id) ON DELETE SET NULL,
+  remetente_nome TEXT NOT NULL DEFAULT '',
+  destino_roles  TEXT[] NOT NULL DEFAULT '{}',
+  criado_em      TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
 
+ALTER TABLE public.comunicados ENABLE ROW LEVEL SECURITY;
+
+DROP POLICY IF EXISTS "comunicados_select" ON public.comunicados;
+DROP POLICY IF EXISTS "comunicados_insert" ON public.comunicados;
+
+-- Lê se: é o remetente, ou sua role está na lista de destino, ou destino contém 'todos'
+CREATE POLICY "comunicados_select" ON public.comunicados FOR SELECT USING (
+  remetente_id = auth.uid()
+  OR get_my_role() = ANY(destino_roles)
+  OR 'todos' = ANY(destino_roles)
+);
+
+-- Só liderança e coordenador_geral podem enviar
+CREATE POLICY "comunicados_insert" ON public.comunicados FOR INSERT
+  WITH CHECK (get_my_role() IN ('lideranca', 'coordenador_geral'));
+
+-- ─────────────────────────────────────────────────────────────────────────────
+-- Tabela: push_subscriptions (assinaturas Web Push por usuário)
+-- ─────────────────────────────────────────────────────────────────────────────
+CREATE TABLE IF NOT EXISTS public.push_subscriptions (
+  user_id   UUID PRIMARY KEY REFERENCES public.perfis(id) ON DELETE CASCADE,
+  endpoint  TEXT NOT NULL,
+  p256dh    TEXT NOT NULL,
+  auth      TEXT NOT NULL,
+  criado_em TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+ALTER TABLE public.push_subscriptions ENABLE ROW LEVEL SECURITY;
+
+DROP POLICY IF EXISTS "push_sub_self" ON public.push_subscriptions;
+CREATE POLICY "push_sub_self" ON public.push_subscriptions
+  USING (user_id = auth.uid())
+  WITH CHECK (user_id = auth.uid());
+
+-- Service role pode ler todas as assinaturas (necessário para a Edge Function)
+DROP POLICY IF EXISTS "push_sub_service" ON public.push_subscriptions;
+CREATE POLICY "push_sub_service" ON public.push_subscriptions
+  FOR SELECT USING (auth.role() = 'service_role');

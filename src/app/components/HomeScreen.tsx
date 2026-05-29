@@ -1,5 +1,8 @@
-import { Plus, Users, TrendingUp, MapPin, LogOut, Clock, Calendar, PieChart } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { Plus, Users, TrendingUp, MapPin, LogOut, Clock, Calendar, PieChart, Megaphone, ChevronDown, ChevronUp } from 'lucide-react';
 import { UserRole, getPermissions, ROLE_LABELS } from '../lib/rbac';
+import { User } from '../lib/auth';
+import { supabase, isSupabaseConfigured } from '../lib/supabase';
 
 interface Activity {
   id: string;
@@ -9,7 +12,16 @@ interface Activity {
   type: 'reuniao' | 'visita';
 }
 
+interface Comunicado {
+  id: string;
+  titulo: string;
+  mensagem: string;
+  remetente_nome: string;
+  criado_em: string;
+}
+
 interface HomeScreenProps {
+  user?: User;
   userName: string;
   totalCadastros: number;
   votoStats?: { forte: number; medio: number; fraco: number };
@@ -36,8 +48,20 @@ const MOCK_ACTIVITIES: Activity[] = [
   }
 ];
 
-export function HomeScreen({ userName, totalCadastros, votoStats, onNavigate, onLogout, userRole }: HomeScreenProps) {
+export function HomeScreen({ user, userName, totalCadastros, votoStats, onNavigate, onLogout, userRole }: HomeScreenProps) {
   const permissions = getPermissions(userRole);
+  const [comunicados, setComunicados] = useState<Comunicado[]>([]);
+  const [expandedCom, setExpandedCom] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!user || !isSupabaseConfigured || !supabase) return;
+    supabase
+      .from('comunicados')
+      .select('id, titulo, mensagem, remetente_nome, criado_em')
+      .order('criado_em', { ascending: false })
+      .limit(10)
+      .then(({ data }) => { if (data) setComunicados(data as Comunicado[]); });
+  }, [user?.id]);
 
   const votoData = [
     { name: 'Fortes', value: votoStats?.forte ?? 0, color: '#16a34a' },
@@ -275,6 +299,46 @@ export function HomeScreen({ userName, totalCadastros, votoStats, onNavigate, on
             </button>
           </div>
         </div>
+
+        {/* Comunicados Recebidos */}
+        {comunicados.length > 0 && (
+          <div className="mb-6">
+            <div className="flex items-center gap-2 mb-3">
+              <Megaphone className="w-5 h-5 text-blue-600" />
+              <h3 className="font-bold text-gray-900">Comunicados</h3>
+              <span className="ml-auto text-xs bg-blue-100 text-blue-700 font-semibold px-2 py-0.5 rounded-full">
+                {comunicados.length}
+              </span>
+            </div>
+            <div className="space-y-2">
+              {comunicados.map(com => (
+                <div key={com.id} className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
+                  <button
+                    onClick={() => setExpandedCom(expandedCom === com.id ? null : com.id)}
+                    className="w-full p-4 flex items-start justify-between gap-3 text-left"
+                  >
+                    <div className="flex-1 min-w-0">
+                      <p className="font-semibold text-gray-900 text-sm truncate">{com.titulo}</p>
+                      <p className="text-xs text-gray-400 mt-0.5">
+                        {com.remetente_nome} · {new Date(com.criado_em).toLocaleDateString('pt-BR', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' })}
+                      </p>
+                    </div>
+                    {expandedCom === com.id
+                      ? <ChevronUp className="w-4 h-4 text-gray-400 shrink-0 mt-0.5" />
+                      : <ChevronDown className="w-4 h-4 text-gray-400 shrink-0 mt-0.5" />}
+                  </button>
+                  {expandedCom === com.id && (
+                    <div className="px-4 pb-4">
+                      <p className="text-sm text-gray-700 whitespace-pre-wrap border-t border-gray-100 pt-3">
+                        {com.mensagem}
+                      </p>
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
 
         {/* Espaçamento inferior para o botão flutuante */}
         <div className="pb-20"></div>

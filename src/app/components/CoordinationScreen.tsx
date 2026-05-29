@@ -1,8 +1,9 @@
 import { useState } from 'react';
-import { Users, Target, Download, ChevronDown, ChevronRight, UserCheck, GitCompare } from 'lucide-react';
+import { Users, Target, Download, ChevronDown, ChevronRight, UserCheck, GitCompare, Megaphone } from 'lucide-react';
 import { User } from '../lib/auth';
 import { ElectorData } from './CaptureForm';
 import { RegionCompareScreen } from './RegionCompareScreen';
+import { ComunicadoModal } from './ComunicadoModal';
 
 interface Props {
   user: User;
@@ -30,6 +31,7 @@ function exportCSV(rows: Record<string, string | number>[], filename: string) {
 export function CoordinationScreen({ user, electors, users, canExport }: Props) {
   const [expanded, setExpanded] = useState<string | null>(null);
   const [coordTab, setCoordTab] = useState<'equipe' | 'comparar'>('equipe');
+  const [showComunicado, setShowComunicado] = useState(false);
 
   const countByCaptador = (captadorId: string) =>
     electors.filter(e => e.createdBy === captadorId).length;
@@ -163,9 +165,26 @@ export function CoordinationScreen({ user, electors, users, canExport }: Props) 
 
   return (
     <div className="min-h-screen bg-gray-100 pb-24">
+      {showComunicado && (
+        <ComunicadoModal user={user} onClose={() => setShowComunicado(false)} />
+      )}
+
       <div className="bg-gradient-to-r from-blue-600 to-blue-700 text-white p-6">
-        <h1 className="text-2xl font-bold mb-1">Coordenação</h1>
-        <p className="text-sm text-blue-100">Visão geral da equipe</p>
+        <div className="flex items-start justify-between">
+          <div>
+            <h1 className="text-2xl font-bold mb-1">Coordenação</h1>
+            <p className="text-sm text-blue-100">Visão geral da equipe</p>
+          </div>
+          {(user.role === 'lideranca' || user.role === 'coordenador_geral') && (
+            <button
+              onClick={() => setShowComunicado(true)}
+              className="flex items-center gap-1.5 bg-white/15 hover:bg-white/25 text-white text-xs font-semibold px-3 py-2 rounded-xl transition-colors"
+            >
+              <Megaphone className="w-4 h-4" />
+              Comunicado
+            </button>
+          )}
+        </div>
       </div>
 
       {/* Abas internas */}

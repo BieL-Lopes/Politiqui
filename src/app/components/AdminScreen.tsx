@@ -1,8 +1,9 @@
 import { useState } from 'react';
 import {
   Users, Shield, Settings, ChevronRight, UserPlus, Trash2, Edit2,
-  Download, BarChart2, TrendingUp, Target
+  Download, BarChart2, TrendingUp, Target, Megaphone
 } from 'lucide-react';
+import { ComunicadoModal } from './ComunicadoModal';
 import {
   BarChart, Bar, XAxis, YAxis, Tooltip, PieChart, Pie, Cell,
   LineChart, Line, ResponsiveContainer, CartesianGrid, Legend
@@ -37,6 +38,7 @@ export function AdminScreen({ user, electors, users, canExport }: Props) {
   const [activeTab, setActiveTab] = useState<'users' | 'dashboard' | 'settings'>(
     showDashboard ? 'dashboard' : 'users'
   );
+  const [showComunicado, setShowComunicado] = useState(false);
 
   // ── Export handlers ──
   const handleExportUsers = () => {
@@ -154,10 +156,27 @@ export function AdminScreen({ user, electors, users, canExport }: Props) {
 
   return (
     <div className="min-h-screen bg-gray-100 pb-24">
+      {showComunicado && (
+        <ComunicadoModal user={user} onClose={() => setShowComunicado(false)} />
+      )}
+
       {/* Header */}
       <div className="bg-gradient-to-r from-blue-600 to-blue-700 text-white p-6">
-        <h1 className="text-2xl font-bold mb-1">Administração</h1>
-        <p className="text-sm text-blue-100">Gestão de usuários e configurações</p>
+        <div className="flex items-start justify-between">
+          <div>
+            <h1 className="text-2xl font-bold mb-1">Administração</h1>
+            <p className="text-sm text-blue-100">Gestão de usuários e configurações</p>
+          </div>
+          {user.role === 'lideranca' && (
+            <button
+              onClick={() => setShowComunicado(true)}
+              className="flex items-center gap-1.5 bg-white/15 hover:bg-white/25 text-white text-xs font-semibold px-3 py-2 rounded-xl transition-colors"
+            >
+              <Megaphone className="w-4 h-4" />
+              Comunicado
+            </button>
+          )}
+        </div>
       </div>
 
       {/* Tabs */}

@@ -159,3 +159,55 @@ ON CONFLICT (id) DO UPDATE SET
   regiao = EXCLUDED.regiao,
   deputado_id              = EXCLUDED.deputado_id,
   coordenador_regional_id  = EXCLUDED.coordenador_regional_id;
+
+-- ─────────────────────────────────────────────
+-- 3. Eventos de demonstração (criados pelo Victor — liderança)
+-- ─────────────────────────────────────────────
+INSERT INTO public.eventos (id, titulo, data, horario, local, criado_por)
+VALUES
+  (
+    'e0000000-0000-0000-0000-000000000001',
+    'Reunião de Campanha — Centro',
+    (CURRENT_DATE + interval '5 days')::date,
+    '19:00',
+    'Sede do Bairro Centro, Rua das Flores, 100',
+    '00000000-0000-0000-0000-000000000001'
+  ),
+  (
+    'e0000000-0000-0000-0000-000000000002',
+    'Caminhada Eleitoral — Zona Norte',
+    (CURRENT_DATE + interval '10 days')::date,
+    '08:00',
+    'Praça Central, Av. Principal s/n',
+    '00000000-0000-0000-0000-000000000001'
+  ),
+  (
+    'e0000000-0000-0000-0000-000000000003',
+    'Café com o Deputado',
+    (CURRENT_DATE + interval '14 days')::date,
+    '10:00',
+    'Câmara Municipal — Auditório B',
+    '00000000-0000-0000-0000-000000000001'
+  )
+ON CONFLICT (id) DO NOTHING;
+
+-- ─────────────────────────────────────────────
+-- 4. Enquetes de demonstração (criadas pelo Victor — liderança)
+-- ─────────────────────────────────────────────
+INSERT INTO public.enquetes (id, titulo, opcoes, status, criado_por)
+VALUES
+  (
+    'q0000000-0000-0000-0000-000000000001',
+    'Qual é a sua maior prioridade para o bairro?',
+    '["Saúde","Educação","Segurança","Emprego"]',
+    'ativa',
+    '00000000-0000-0000-0000-000000000001'
+  ),
+  (
+    'q0000000-0000-0000-0000-000000000002',
+    'Como você avalia a atuação do vereador na sua região?',
+    '["Ótimo","Bom","Regular","Ruim"]',
+    'ativa',
+    '00000000-0000-0000-0000-000000000001'
+  )
+ON CONFLICT (id) DO NOTHING;
