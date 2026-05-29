@@ -1,5 +1,5 @@
 import { useMemo } from 'react';
-import { Trophy, Flame, Target, Star, LogOut, ChevronUp, Minus, ChevronDown } from 'lucide-react';
+import { Trophy, Flame, Target, Star, LogOut, ChevronUp, Minus, ChevronDown, MapPin } from 'lucide-react';
 import { User } from '../lib/auth';
 import { ElectorData } from './CaptureForm';
 import {
@@ -11,12 +11,13 @@ interface Props {
   electors: ElectorData[];
   users: User[];
   onLogout: () => void;
+  onViewRoute: () => void;
 }
 
 const RANK_COLORS = ['#f59e0b', '#94a3b8', '#cd7f32'];
 const RANK_LABELS = ['1º', '2º', '3º'];
 
-export function CaptadorResultsScreen({ user, electors, users, onLogout }: Props) {
+export function CaptadorResultsScreen({ user, electors, users, onLogout, onViewRoute }: Props) {
   const ranking = useMemo(() => buildRanking(users, electors), [users, electors]);
   const me = ranking.find(r => r.id === user.id);
 
@@ -93,6 +94,23 @@ export function CaptadorResultsScreen({ user, electors, users, onLogout }: Props
             <p className="text-xs text-green-600 font-medium mt-1.5">✅ Meta atingida hoje!</p>
           )}
         </div>
+
+        {/* Minha Rota */}
+        <button
+          onClick={onViewRoute}
+          className="w-full flex items-center justify-between bg-white rounded-2xl shadow p-4 hover:bg-gray-50 active:scale-[0.99] transition-all"
+        >
+          <div className="flex items-center gap-3">
+            <div className="w-9 h-9 bg-green-100 rounded-xl flex items-center justify-center">
+              <MapPin className="w-5 h-5 text-green-600" />
+            </div>
+            <div className="text-left">
+              <p className="font-semibold text-gray-900 text-sm">Minha Rota</p>
+              <p className="text-xs text-gray-400">Histórico de check-ins no mapa</p>
+            </div>
+          </div>
+          <ChevronUp className="w-4 h-4 text-gray-400 rotate-90" />
+        </button>
 
         {/* Medalhas */}
         <div className="bg-white rounded-2xl shadow p-4">

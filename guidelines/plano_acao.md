@@ -226,13 +226,13 @@
 
 ---
 
-#### 9.7 — Check-in e Rota dos Captadores 🔲 ⭐
-**Complexidade: Média** — exige geolocalização e mapa no app.
+#### 9.7 — Check-in e Rota dos Captadores ✅
+**Complexidade: Média** — geolocalização e mapa no app.
 
-- [ ] Captador faz check-in automático (geolocalização) ao registrar um eleitor
-- [ ] Coordenador Regional vê mapa simples com pontos onde cada captador esteve
-- [ ] Registrar regiões atendidas por dia
-- [ ] Histórico de trajeto por captador
+- [x] Captador faz check-in automático (geolocalização) ao registrar um eleitor
+- [x] Coordenador Regional vê mapa com pontos onde cada captador esteve
+- [x] Registrar regiões atendidas por dia
+- [x] Histórico de trajeto por captador
 
 ---
 

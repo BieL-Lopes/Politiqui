@@ -10,6 +10,7 @@ import { PollsScreen } from './components/PollsScreen';
 import { CoordinationScreen } from './components/CoordinationScreen';
 import { AdminScreen } from './components/AdminScreen';
 import { CaptadorResultsScreen } from './components/CaptadorResultsScreen';
+import { CheckinMapScreen } from './components/CheckinMapScreen';
 import { BottomNav } from './components/BottomNav';
 import { OfflineBanner } from './components/OfflineBanner';
 import { toast } from 'sonner';
@@ -23,7 +24,7 @@ import { subscribeToPush, unsubscribeFromPush } from './lib/pushService';
 import { buildRanking, todayCount, computeStreak, MEDALS } from './lib/gamification';
 import { useSync } from './lib/useSync';
 
-type Screen = 'login' | 'home' | 'form' | 'list' | 'profile' | 'agenda' | 'polls' | 'coordination' | 'admin' | 'results';
+type Screen = 'login' | 'home' | 'form' | 'list' | 'profile' | 'agenda' | 'polls' | 'coordination' | 'admin' | 'results' | 'checkin';
 
 export default function App() {
   const [currentScreen, setCurrentScreen] = useState<Screen>('login');
@@ -190,6 +191,30 @@ export default function App() {
     setElectors(prev => [newElector, ...prev]);
     setCurrentScreen('home');
     toast.success('✅ Eleitor cadastrado com sucesso!');
+
+    // Background GPS capture — updates the record silently after save
+    if (navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(
+        async (pos) => {
+          const withGPS: ElectorData = {
+            ...newElector,
+            gpsLatitude: pos.coords.latitude,
+            gpsLongitude: pos.coords.longitude,
+            updatedAt: new Date().toISOString(),
+          };
+          await db.electors.put(withGPS);
+          await db.pendingChanges.add({
+            operation: 'update',
+            entityId: withGPS.id,
+            payload: withGPS,
+            timestamp: new Date().toISOString(),
+          });
+          setElectors(prev => prev.map(e => e.id === withGPS.id ? withGPS : e));
+        },
+        () => { /* GPS negado ou indisponível — silencioso */ },
+        { timeout: 8000, enableHighAccuracy: true, maximumAge: 30000 }
+      );
+    }
   };
 
   const handleDeleteElector = async (id: string) => {
@@ -360,6 +385,24 @@ export default function App() {
           electors={electors}
           users={users}
           onLogout={handleLogout}
+          onViewRoute={() => setCurrentScreen('checkin')}
+        />
+        <BottomNav currentTab={currentTab} onTabChange={handleTabChange} userRole={user?.role || 'eleitor'} />
+        <Toaster position="top-center" richColors />
+      </>
+    );
+  }
+
+  if (currentScreen === 'checkin' && user) {
+    return (
+      <>
+        <OfflineBanner isOnline={isOnline} pendingCount={pendingCount} />
+        <CheckinMapScreen
+          user={user}
+          electors={electors}
+          users={users}
+          onBack={() => setCurrentScreen('results')}
+          mode="captador"
         />
         <BottomNav currentTab={currentTab} onTabChange={handleTabChange} userRole={user?.role || 'eleitor'} />
         <Toaster position="top-center" richColors />

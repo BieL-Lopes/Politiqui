@@ -1,10 +1,11 @@
 import { useState, useMemo } from 'react';
-import { Users, Target, Download, ChevronDown, ChevronRight, UserCheck, GitCompare, Megaphone, Trophy, Flame } from 'lucide-react';
+import { Users, Target, Download, ChevronDown, ChevronRight, UserCheck, GitCompare, Megaphone, Trophy, Flame, MapPin } from 'lucide-react';
 import { User } from '../lib/auth';
 import { ElectorData } from './CaptureForm';
 import { RegionCompareScreen } from './RegionCompareScreen';
 import { ComunicadoModal } from './ComunicadoModal';
 import { buildRanking, MEDALS } from '../lib/gamification';
+import { CheckinMapScreen } from './CheckinMapScreen';
 
 interface Props {
   user: User;
@@ -31,7 +32,7 @@ function exportCSV(rows: Record<string, string | number>[], filename: string) {
 
 export function CoordinationScreen({ user, electors, users, canExport }: Props) {
   const [expanded, setExpanded] = useState<string | null>(null);
-  const [coordTab, setCoordTab] = useState<'equipe' | 'ranking' | 'comparar'>('equipe');
+  const [coordTab, setCoordTab] = useState<'equipe' | 'ranking' | 'mapa' | 'comparar'>('equipe');
   const [showComunicado, setShowComunicado] = useState(false);
 
   const ranking = useMemo(() => buildRanking(users, electors), [users, electors]);
@@ -212,6 +213,15 @@ export function CoordinationScreen({ user, electors, users, canExport }: Props) 
             Ranking
           </button>
           <button
+            onClick={() => setCoordTab('mapa')}
+            className={`py-3 px-4 font-medium text-sm border-b-2 transition-colors flex items-center gap-1.5 ${
+              coordTab === 'mapa' ? 'border-blue-600 text-blue-600' : 'border-transparent text-gray-500'
+            }`}
+          >
+            <MapPin className="w-4 h-4" />
+            Mapa
+          </button>
+          <button
             onClick={() => setCoordTab('comparar')}
             className={`py-3 px-4 font-medium text-sm border-b-2 transition-colors flex items-center gap-1.5 ${
               coordTab === 'comparar' ? 'border-blue-600 text-blue-600' : 'border-transparent text-gray-500'
@@ -273,6 +283,17 @@ export function CoordinationScreen({ user, electors, users, canExport }: Props) 
             </div>
           )}
         </div>
+      )}
+
+      {/* Aba Mapa */}
+      {coordTab === 'mapa' && (
+        <CheckinMapScreen
+          user={user}
+          electors={electors}
+          users={users}
+          onBack={() => setCoordTab('equipe')}
+          mode="coordinator"
+        />
       )}
 
       {/* Aba Comparar */}
