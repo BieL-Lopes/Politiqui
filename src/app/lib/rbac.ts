@@ -7,7 +7,7 @@ export type UserRole =
   | 'eleitor';            // Eleitor - apenas visualizacao basica
 
 // Tabs disponiveis no sistema
-export type Tab = 'home' | 'contacts' | 'agenda' | 'polls' | 'admin' | 'coordination';
+export type Tab = 'home' | 'contacts' | 'agenda' | 'polls' | 'admin' | 'coordination' | 'results';
 
 // Labels amigaveis para os papeis
 export const ROLE_LABELS: Record<UserRole, string> = {
@@ -56,7 +56,7 @@ export const ROLE_PERMISSIONS: Record<UserRole, {
     canManageUsers: false
   },
   captador_votos: {
-    tabs: ['home', 'contacts', 'agenda'],
+    tabs: ['home', 'contacts', 'agenda', 'results'],
     canCreateElector: true,
     canDeleteElector: false,
     canExport: false,

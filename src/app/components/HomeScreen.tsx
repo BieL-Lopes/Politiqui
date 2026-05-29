@@ -1,8 +1,9 @@
 import { useState, useEffect } from 'react';
-import { Plus, Users, TrendingUp, MapPin, LogOut, Clock, Calendar, PieChart, Megaphone, ChevronDown, ChevronUp } from 'lucide-react';
+import { Plus, Users, TrendingUp, MapPin, LogOut, Clock, Calendar, PieChart, Megaphone, ChevronDown, ChevronUp, Flame, Target, Trophy } from 'lucide-react';
 import { UserRole, getPermissions, ROLE_LABELS } from '../lib/rbac';
 import { User } from '../lib/auth';
 import { supabase, isSupabaseConfigured } from '../lib/supabase';
+import { META_DIARIA, MEDALS } from '../lib/gamification';
 
 interface Activity {
   id: string;
@@ -20,6 +21,14 @@ interface Comunicado {
   criado_em: string;
 }
 
+interface CaptadorStats {
+  total: number;
+  today: number;
+  streak: number;
+  rank: number;
+  earnedMedalIds: string[];
+}
+
 interface HomeScreenProps {
   user?: User;
   userName: string;
@@ -28,6 +37,7 @@ interface HomeScreenProps {
   onNavigate: (screen: 'form' | 'list' | 'agenda') => void;
   onLogout: () => void;
   userRole: UserRole;
+  captadorStats?: CaptadorStats;
 }
 
 // Atividades mockadas para demonstração
@@ -48,7 +58,7 @@ const MOCK_ACTIVITIES: Activity[] = [
   }
 ];
 
-export function HomeScreen({ user, userName, totalCadastros, votoStats, onNavigate, onLogout, userRole }: HomeScreenProps) {
+export function HomeScreen({ user, userName, totalCadastros, votoStats, onNavigate, onLogout, userRole, captadorStats }: HomeScreenProps) {
   const permissions = getPermissions(userRole);
   const [comunicados, setComunicados] = useState<Comunicado[]>([]);
   const [expandedCom, setExpandedCom] = useState<string | null>(null);
@@ -99,8 +109,12 @@ export function HomeScreen({ user, userName, totalCadastros, votoStats, onNaviga
         >
           <div className="flex items-center justify-between mb-4">
             <div>
-              <p className="text-gray-600 text-sm mb-1">Eleitores cadastrados</p>
-              <p className="text-4xl font-bold text-blue-600">{totalCadastros}</p>
+              <p className="text-gray-600 text-sm mb-1">
+                {captadorStats ? 'Meus cadastros' : 'Eleitores cadastrados'}
+              </p>
+              <p className="text-4xl font-bold text-blue-600">
+                {captadorStats ? captadorStats.total : totalCadastros}
+              </p>
             </div>
             <div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center">
               <Users className="w-8 h-8 text-blue-600" />
@@ -108,29 +122,89 @@ export function HomeScreen({ user, userName, totalCadastros, votoStats, onNaviga
           </div>
           <div className="flex items-center text-green-600 text-sm">
             <TrendingUp className="w-4 h-4 mr-1" />
-            <span>+{Math.floor(totalCadastros * 0.3)} esta semana</span>
+            <span>+{Math.floor((captadorStats ? captadorStats.total : totalCadastros) * 0.3)} esta semana</span>
           </div>
         </button>
 
-        {/* Cards Secundários */}
-        <div className="grid grid-cols-2 gap-4 mb-6">
-          <div className="bg-white rounded-xl shadow p-4">
-            <div className="flex items-center justify-between mb-2">
-              <p className="text-gray-600 text-sm">Votos Fortes</p>
+        {/* Widget de Gamificação para Captador */}
+        {captadorStats ? (
+          <div className="space-y-3 mb-6">
+            {/* Meta Diária */}
+            <div className="bg-white rounded-2xl shadow p-4">
+              <div className="flex items-center justify-between mb-2">
+                <div className="flex items-center gap-2">
+                  <Target className="w-4 h-4 text-blue-600" />
+                  <span className="text-sm font-semibold text-gray-900">Meta de hoje</span>
+                </div>
+                <span className="text-sm font-bold text-blue-600">
+                  {captadorStats.today}/{META_DIARIA}
+                </span>
+              </div>
+              <div className="w-full h-3 bg-gray-100 rounded-full overflow-hidden">
+                <div
+                  className={`h-3 rounded-full transition-all ${
+                    captadorStats.today >= META_DIARIA ? 'bg-green-500' : 'bg-blue-500'
+                  }`}
+                  style={{ width: `${Math.min((captadorStats.today / META_DIARIA) * 100, 100)}%` }}
+                />
+              </div>
+              {captadorStats.today >= META_DIARIA && (
+                <p className="text-xs text-green-600 font-medium mt-1">✅ Meta atingida hoje!</p>
+              )}
             </div>
-            <p className="text-2xl font-bold text-green-600">{votoData[0].value}</p>
-          </div>
 
-          <div className="bg-white rounded-xl shadow p-4">
-            <div className="flex items-center justify-between mb-2">
-              <p className="text-gray-600 text-sm">Regiões</p>
+            {/* Streak + Rank */}
+            <div className="grid grid-cols-2 gap-3">
+              <div className="bg-white rounded-2xl shadow p-4 flex flex-col items-center justify-center">
+                <Flame className={`w-6 h-6 mb-1 ${
+                  captadorStats.streak > 0 ? 'text-orange-500' : 'text-gray-300'
+                }`} />
+                <p className="text-2xl font-bold text-gray-900">{captadorStats.streak}</p>
+                <p className="text-xs text-gray-400">Dias seguidos</p>
+              </div>
+              <div className="bg-white rounded-2xl shadow p-4 flex flex-col items-center justify-center">
+                <Trophy className="w-6 h-6 text-yellow-500 mb-1" />
+                <p className="text-2xl font-bold text-gray-900">#{captadorStats.rank}</p>
+                <p className="text-xs text-gray-400">Ranking</p>
+              </div>
             </div>
-            <div className="flex items-center">
-              <MapPin className="w-4 h-4 text-blue-600 mr-1" />
-              <p className="text-2xl font-bold text-blue-600">{Math.max(1, Math.floor(totalCadastros / 10))}</p>
+
+            {/* Medalhas conquistadas */}
+            {captadorStats.earnedMedalIds.length > 0 && (
+              <div className="bg-white rounded-2xl shadow p-4">
+                <p className="text-sm font-semibold text-gray-900 mb-2">Medalhas conquistadas</p>
+                <div className="flex flex-wrap gap-2">
+                  {MEDALS.filter(m => captadorStats.earnedMedalIds.includes(m.id)).map(m => (
+                    <div key={m.id} className="flex items-center gap-1 bg-yellow-50 border border-yellow-200 rounded-lg px-2 py-1">
+                      <span className="text-base">{m.icon}</span>
+                      <span className="text-xs font-medium text-gray-700">{m.label}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+        ) : (
+          /* Cards Secundários (apenas para roles que não são captador) */
+          <div className="grid grid-cols-2 gap-4 mb-6">
+            <div className="bg-white rounded-xl shadow p-4">
+              <div className="flex items-center justify-between mb-2">
+                <p className="text-gray-600 text-sm">Votos Fortes</p>
+              </div>
+              <p className="text-2xl font-bold text-green-600">{votoData[0].value}</p>
+            </div>
+
+            <div className="bg-white rounded-xl shadow p-4">
+              <div className="flex items-center justify-between mb-2">
+                <p className="text-gray-600 text-sm">Regiões</p>
+              </div>
+              <div className="flex items-center">
+                <MapPin className="w-4 h-4 text-blue-600 mr-1" />
+                <p className="text-2xl font-bold text-blue-600">{Math.max(1, Math.floor(totalCadastros / 10))}</p>
+              </div>
             </div>
           </div>
-        </div>
+        )}
 
         {/* Termômetro de Votos - Barra Linear */}
         {totalCadastros > 0 && (

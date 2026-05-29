@@ -1,9 +1,10 @@
-import { useState } from 'react';
-import { Users, Target, Download, ChevronDown, ChevronRight, UserCheck, GitCompare, Megaphone } from 'lucide-react';
+import { useState, useMemo } from 'react';
+import { Users, Target, Download, ChevronDown, ChevronRight, UserCheck, GitCompare, Megaphone, Trophy, Flame } from 'lucide-react';
 import { User } from '../lib/auth';
 import { ElectorData } from './CaptureForm';
 import { RegionCompareScreen } from './RegionCompareScreen';
 import { ComunicadoModal } from './ComunicadoModal';
+import { buildRanking, MEDALS } from '../lib/gamification';
 
 interface Props {
   user: User;
@@ -30,8 +31,10 @@ function exportCSV(rows: Record<string, string | number>[], filename: string) {
 
 export function CoordinationScreen({ user, electors, users, canExport }: Props) {
   const [expanded, setExpanded] = useState<string | null>(null);
-  const [coordTab, setCoordTab] = useState<'equipe' | 'comparar'>('equipe');
+  const [coordTab, setCoordTab] = useState<'equipe' | 'ranking' | 'comparar'>('equipe');
   const [showComunicado, setShowComunicado] = useState(false);
+
+  const ranking = useMemo(() => buildRanking(users, electors), [users, electors]);
 
   const countByCaptador = (captadorId: string) =>
     electors.filter(e => e.createdBy === captadorId).length;
@@ -200,6 +203,15 @@ export function CoordinationScreen({ user, electors, users, canExport }: Props) 
             Equipe
           </button>
           <button
+            onClick={() => setCoordTab('ranking')}
+            className={`py-3 px-4 font-medium text-sm border-b-2 transition-colors flex items-center gap-1.5 ${
+              coordTab === 'ranking' ? 'border-blue-600 text-blue-600' : 'border-transparent text-gray-500'
+            }`}
+          >
+            <Trophy className="w-4 h-4" />
+            Ranking
+          </button>
+          <button
             onClick={() => setCoordTab('comparar')}
             className={`py-3 px-4 font-medium text-sm border-b-2 transition-colors flex items-center gap-1.5 ${
               coordTab === 'comparar' ? 'border-blue-600 text-blue-600' : 'border-transparent text-gray-500'
@@ -210,6 +222,58 @@ export function CoordinationScreen({ user, electors, users, canExport }: Props) 
           </button>
         </div>
       </div>
+
+      {/* Aba Ranking */}
+      {coordTab === 'ranking' && (
+        <div className="p-4">
+          {ranking.length === 0 ? (
+            <div className="bg-white rounded-xl shadow p-8 text-center text-gray-400">
+              <Trophy className="w-12 h-12 mx-auto mb-3 opacity-30" />
+              <p>Nenhum captador cadastrado ainda.</p>
+            </div>
+          ) : (
+            <div className="bg-white rounded-2xl shadow overflow-hidden">
+              <div className="p-4 border-b border-gray-100 flex items-center gap-2">
+                <Trophy className="w-5 h-5 text-yellow-500" />
+                <h2 className="font-bold text-gray-900">Ranking de Captadores</h2>
+              </div>
+              <div className="divide-y divide-gray-100">
+                {ranking.map(entry => {
+                  const podiumColors = ['#f59e0b', '#94a3b8', '#cd7f32'];
+                  return (
+                    <div key={entry.id} className="flex items-center gap-3 p-4">
+                      <div
+                        className="w-8 h-8 rounded-full flex items-center justify-center shrink-0 font-bold text-sm"
+                        style={{
+                          background: entry.rank <= 3 ? podiumColors[entry.rank - 1] : '#e5e7eb',
+                          color: entry.rank <= 3 ? '#fff' : '#6b7280',
+                        }}
+                      >
+                        {entry.rank}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-semibold text-gray-900 truncate">{entry.name}</p>
+                        <p className="text-xs text-gray-400">
+                          {entry.earnedMedalIds.map(id => MEDALS.find(m => m.id === id)?.icon).join(' ')}
+                          {entry.streak > 0 && (
+                            <span className="ml-1">
+                              <Flame className="w-3 h-3 inline text-orange-500" /> {entry.streak}d
+                            </span>
+                          )}
+                        </p>
+                      </div>
+                      <div className="text-right shrink-0">
+                        <p className="font-bold text-blue-600">{entry.total}</p>
+                        <p className="text-xs text-gray-400">hoje: {entry.today}</p>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+        </div>
+      )}
 
       {/* Aba Comparar */}
       {coordTab === 'comparar' && (

@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { LoginScreen } from './components/LoginScreen';
 import { HomeScreen } from './components/HomeScreen';
 import { ElectorHomeScreen } from './components/ElectorHomeScreen';
@@ -9,6 +9,7 @@ import { AgendaScreen } from './components/AgendaScreen';
 import { PollsScreen } from './components/PollsScreen';
 import { CoordinationScreen } from './components/CoordinationScreen';
 import { AdminScreen } from './components/AdminScreen';
+import { CaptadorResultsScreen } from './components/CaptadorResultsScreen';
 import { BottomNav } from './components/BottomNav';
 import { OfflineBanner } from './components/OfflineBanner';
 import { toast } from 'sonner';
@@ -19,9 +20,10 @@ import { supabase, isSupabaseConfigured } from './lib/supabase';
 import { db } from './lib/db';
 import { pushPendingChanges, resetLastSync, pullChanges } from './lib/syncService';
 import { subscribeToPush, unsubscribeFromPush } from './lib/pushService';
+import { buildRanking, todayCount, computeStreak, MEDALS } from './lib/gamification';
 import { useSync } from './lib/useSync';
 
-type Screen = 'login' | 'home' | 'form' | 'list' | 'profile' | 'agenda' | 'polls' | 'coordination' | 'admin';
+type Screen = 'login' | 'home' | 'form' | 'list' | 'profile' | 'agenda' | 'polls' | 'coordination' | 'admin' | 'results';
 
 export default function App() {
   const [currentScreen, setCurrentScreen] = useState<Screen>('login');
@@ -32,6 +34,20 @@ export default function App() {
   const [selectedElector, setSelectedElector] = useState<ElectorData | null>(null);
   const [electorToEdit, setElectorToEdit] = useState<ElectorData | null>(null);
   const { isOnline, pendingCount, refreshCount, syncedAt } = useSync();
+
+  const captadorStats = useMemo(() => {
+    if (!user || user.role !== 'captador_votos') return undefined;
+    const total = electors.filter(e => e.createdBy === user.id).length;
+    const ranking = buildRanking(users, electors);
+    const rank = ranking.find(r => r.id === user.id)?.rank ?? ranking.length + 1;
+    return {
+      total,
+      today: todayCount(electors, user.id),
+      streak: computeStreak(electors, user.id),
+      rank,
+      earnedMedalIds: MEDALS.filter(m => total >= m.threshold).map(m => m.id),
+    };
+  }, [user, electors, users]);
 
   const fetchUsers = async () => {
     if (!isSupabaseConfigured || !supabase) return;
@@ -139,6 +155,9 @@ export default function App() {
         break;
       case 'coordination':
         setCurrentScreen('coordination');
+        break;
+      case 'results':
+        setCurrentScreen('results');
         break;
       case 'admin':
         setCurrentScreen('admin');
@@ -332,6 +351,22 @@ export default function App() {
     );
   }
 
+  if (currentScreen === 'results' && user) {
+    return (
+      <>
+        <OfflineBanner isOnline={isOnline} pendingCount={pendingCount} />
+        <CaptadorResultsScreen
+          user={user}
+          electors={electors}
+          users={users}
+          onLogout={handleLogout}
+        />
+        <BottomNav currentTab={currentTab} onTabChange={handleTabChange} userRole={user?.role || 'eleitor'} />
+        <Toaster position="top-center" richColors />
+      </>
+    );
+  }
+
   if (currentScreen === 'admin') {
     return (
       <>
@@ -386,6 +421,7 @@ export default function App() {
             onNavigate={setCurrentScreen}
             onLogout={handleLogout}
             userRole={user?.role || 'eleitor'}
+            captadorStats={captadorStats}
           />
           <BottomNav currentTab={currentTab} onTabChange={handleTabChange} userRole={user?.role || 'eleitor'} />
         </>

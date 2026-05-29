@@ -213,16 +213,16 @@
 
 ---
 
-#### 9.6 — Gamificação do Captador 🔲 ⭐
+#### 9.6 — Gamificação do Captador ✅
 **Complexidade: Média** — sistema de pontos e recompensas para engajar captadores.
 
 > Citado como diferencial de produtividade — aumenta muito o volume de cadastros.
 
-- [ ] Ranking de captadores por produção (visível para todos da equipe)
-- [ ] Medalhas por marcos: primeiro cadastro, 10 cadastros, 50 cadastros, etc.
-- [ ] Streak diária: manter sequência de dias com cadastros
-- [ ] Barra de progresso de meta diária na home do captador
-- [ ] Tela "Meus Resultados" com histórico pessoal e posição no ranking
+- [x] Ranking de captadores por produção (visível para todos da equipe)
+- [x] Medalhas por marcos: primeiro cadastro, 10 cadastros, 50 cadastros, etc.
+- [x] Streak diária: manter sequência de dias com cadastros
+- [x] Barra de progresso de meta diária na home do captador
+- [x] Tela "Meus Resultados" com histórico pessoal e posição no ranking
 
 ---
 
