@@ -344,6 +344,7 @@ CREATE POLICY "comunicados_insert" ON public.comunicados FOR INSERT
   WITH CHECK (get_my_role() IN ('lideranca', 'coordenador_geral'));
 
 -- Habilitar Realtime para esta tabela (necessário para atualizações em tempo real no app)
+ALTER TABLE public.comunicados REPLICA IDENTITY FULL;
 ALTER PUBLICATION supabase_realtime ADD TABLE public.comunicados;
 
 -- ─────────────────────────────────────────────────────────────────────────────

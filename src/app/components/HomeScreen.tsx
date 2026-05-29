@@ -88,7 +88,13 @@ export function HomeScreen({ user, userName, totalCadastros, votoStats, onNaviga
           toast('📢 Novo comunicado', { description: novo.titulo });
         }
       )
-      .subscribe();
+      .subscribe((status, err) => {
+        if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT') {
+          console.error('[Realtime] comunicados channel error:', status, err);
+        } else {
+          console.log('[Realtime] comunicados status:', status);
+        }
+      });
 
     return () => { supabase!.removeChannel(channel); };
   }, [user?.id]);
