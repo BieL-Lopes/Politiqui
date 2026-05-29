@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import {
   Users, Shield, Settings, ChevronRight, UserPlus, Trash2, Edit2,
-  Download, BarChart2, TrendingUp, Target, Megaphone
+  Download, BarChart2, TrendingUp, Target, Megaphone, Bell
 } from 'lucide-react';
 import { ComunicadoModal } from './ComunicadoModal';
 import {
@@ -11,6 +11,8 @@ import {
 import { UserRole, ROLE_LABELS } from '../lib/rbac';
 import { User } from '../lib/auth';
 import { ElectorData } from './CaptureForm';
+import { supabase } from '../lib/supabase';
+import { toast } from 'sonner';
 
 interface Props {
   user: User;
@@ -168,13 +170,38 @@ export function AdminScreen({ user, electors, users, canExport }: Props) {
             <p className="text-sm text-blue-100">Gestão de usuários e configurações</p>
           </div>
           {user.role === 'lideranca' && (
-            <button
-              onClick={() => setShowComunicado(true)}
-              className="flex items-center gap-1.5 bg-white/15 hover:bg-white/25 text-white text-xs font-semibold px-3 py-2 rounded-xl transition-colors"
-            >
-              <Megaphone className="w-4 h-4" />
-              Comunicado
-            </button>
+            <div className="flex items-center gap-2">
+              <button
+                onClick={async () => {
+                  if (!supabase) return;
+                  const { data, error } = await supabase.functions.invoke('send-push', {
+                    body: {
+                      titulo: '🔔 Teste de Push',
+                      mensagem: 'Se você recebeu esta notificação, o push está funcionando!',
+                      destino_roles: ['todos'],
+                      remetente_nome: user.name,
+                    },
+                  });
+                  if (error) {
+                    toast.error(`Push falhou: ${error.message}`);
+                  } else {
+                    const sent = (data as { sent?: number })?.sent ?? 0;
+                    toast.success(`Push de teste: ${sent} notificação(ões) enviada(s)`);
+                  }
+                }}
+                className="flex items-center gap-1.5 bg-white/10 hover:bg-white/20 text-white text-xs font-semibold px-3 py-2 rounded-xl transition-colors"
+              >
+                <Bell className="w-4 h-4" />
+                Testar Push
+              </button>
+              <button
+                onClick={() => setShowComunicado(true)}
+                className="flex items-center gap-1.5 bg-white/15 hover:bg-white/25 text-white text-xs font-semibold px-3 py-2 rounded-xl transition-colors"
+              >
+                <Megaphone className="w-4 h-4" />
+                Comunicado
+              </button>
+            </div>
           )}
         </div>
       </div>

@@ -60,8 +60,8 @@ export function ComunicadoModal({ user, onClose }: Props) {
       return;
     }
 
-    // Disparar push em background — não bloqueia o toast de sucesso
-    supabase.functions.invoke('send-push', {
+    // Disparar push e aguardar resultado para mostrar feedback
+    const { data: pushData, error: pushError } = await supabase.functions.invoke('send-push', {
       body: {
         titulo: tituloTrimmed,
         mensagem: mensagemTrimmed,
@@ -69,6 +69,15 @@ export function ComunicadoModal({ user, onClose }: Props) {
         remetente_nome: user.name,
       },
     });
+
+    if (pushError) {
+      console.error('[Push] Edge function error:', pushError);
+      // Não bloqueia o sucesso do comunicado, apenas avisa
+      toast.warning(`Comunicado salvo, mas push falhou: ${pushError.message}`);
+    } else {
+      const sent = (pushData as { sent?: number })?.sent ?? 0;
+      console.log(`[Push] ${sent} notificações enviadas`);
+    }
 
     setSending(false);
     toast.success(`✅ Comunicado enviado para: ${destino.label}`);
