@@ -389,29 +389,41 @@ export function ContactList({ contacts, onBack, onDelete, onViewProfile }: Conta
       {/* Estatísticas Rápidas (acima da bottom nav) */}
       {contacts.length > 0 && (
         <div className="fixed bottom-16 left-0 right-0 bg-white border-t-2 border-gray-200 p-4 shadow-lg">
-          <div className="grid grid-cols-4 gap-2 text-center text-sm">
+          <div className="grid grid-cols-3 gap-x-2 gap-y-2 text-center text-sm">
             <div>
-              <p className="text-green-600 font-bold text-xl">
+              <p className="text-green-600 font-bold text-lg leading-tight">
                 {contacts.filter(c => c.nivelVoto === 'forte').length}
               </p>
               <p className="text-gray-600 text-xs">Fortes</p>
             </div>
             <div>
-              <p className="text-yellow-600 font-bold text-xl">
+              <p className="text-yellow-600 font-bold text-lg leading-tight">
                 {contacts.filter(c => c.nivelVoto === 'medio').length}
               </p>
               <p className="text-gray-600 text-xs">Médios</p>
             </div>
             <div>
-              <p className="text-red-600 font-bold text-xl">
+              <p className="text-red-600 font-bold text-lg leading-tight">
                 {contacts.filter(c => c.nivelVoto === 'fraco').length}
               </p>
               <p className="text-gray-600 text-xs">Fracos</p>
             </div>
             <div>
+              <p className="text-slate-500 font-bold text-lg leading-tight">
+                {contacts.filter(c => c.nivelVoto === 'indeciso').length}
+              </p>
+              <p className="text-gray-600 text-xs">Indecisos</p>
+            </div>
+            <div>
+              <p className="text-purple-600 font-bold text-lg leading-tight">
+                {contacts.filter(c => c.nivelVoto === 'oposicao').length}
+              </p>
+              <p className="text-gray-600 text-xs">Oposição</p>
+            </div>
+            <div>
               <div className="flex items-center justify-center gap-1">
-                <TrendingUp className="w-3.5 h-3.5 text-blue-600" />
-                <p className="text-blue-600 font-bold text-xl">{avgScore(contacts)}</p>
+                <TrendingUp className="w-3 h-3 text-blue-600" />
+                <p className="text-blue-600 font-bold text-lg leading-tight">{avgScore(contacts)}</p>
               </div>
               <p className="text-gray-600 text-xs">Score médio</p>
             </div>
