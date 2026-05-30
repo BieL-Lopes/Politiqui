@@ -139,17 +139,23 @@ export default function App() {
     return () => navigator.serviceWorker.removeEventListener('message', handler);
   }, []);
 
-  const handleLogin = (userData: User) => {
+  const handleLogin = async (userData: User) => {
     setUser(userData);
     localStorage.setItem('politiqui_user', JSON.stringify(userData));
     resetLastSync(); // força pull completo na próxima sincronização
     setCurrentScreen('home');
-    fetchUsers();
     subscribeToPush(userData.id); // solicita permissão push (fire-and-forget)
     // Define a primeira tab permitida para o papel do usuario
     const allowedTabs = getAllowedTabs(userData.role);
     setCurrentTab(allowedTabs[0]);
     toast.success(`Bem-vindo(a), ${userData.name}! (${ROLE_LABELS[userData.role]})`);
+    // Carrega dados imediatamente após login (sem depender do useEffect inicial)
+    fetchUsers();
+    if (isSupabaseConfigured) {
+      await pullChanges();
+      const synced = await db.electors.orderBy('dataCadastro').reverse().toArray();
+      setElectors(synced);
+    }
   };
 
   const handleTabChange = (tab: Tab) => {
