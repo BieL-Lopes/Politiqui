@@ -1,7 +1,8 @@
 import { useState } from 'react';
-import { ArrowLeft, Phone, MapPin, Calendar, Navigation, Tag, Award, Plus, FileText, Users as UsersIcon, Trash2, Clock, BookOpen, UserCheck, Edit2, QrCode } from 'lucide-react';
+import { ArrowLeft, Phone, MapPin, Calendar, Navigation, Tag, Award, Plus, FileText, Users as UsersIcon, Trash2, Clock, BookOpen, UserCheck, Edit2, QrCode, TrendingUp } from 'lucide-react';
 import { QRCodeSVG } from 'qrcode.react';
 import { ElectorData, Atendimento } from './CaptureForm';
+import { computeScore } from '../lib/score';
 
 interface ElectorProfileProps {
   elector: ElectorData;
@@ -144,6 +145,32 @@ export function ElectorProfile({ elector, onBack, onUpdate, onEdit }: ElectorPro
             {getNivelVotoBadge(elector.nivelVoto)}
             {getNivelEngajamentoBadge(elector.nivelEngajamento)}
           </div>
+
+          {/* Score de engajamento */}
+          {(() => {
+            const s = computeScore(elector);
+            const pct = s.score;
+            return (
+              <div className="mb-4 p-3 bg-gray-50 rounded-xl border border-gray-100">
+                <div className="flex items-center justify-between mb-1.5">
+                  <div className="flex items-center gap-1.5 text-sm font-medium text-gray-700">
+                    <TrendingUp className="w-4 h-4" style={{ color: s.hexColor }} />
+                    Score de Engajamento
+                  </div>
+                  <span className="text-lg font-bold" style={{ color: s.hexColor }}>
+                    {s.score}/100
+                  </span>
+                </div>
+                <div className="w-full bg-gray-200 rounded-full h-2">
+                  <div
+                    className="h-2 rounded-full transition-all"
+                    style={{ width: `${pct}%`, backgroundColor: s.hexColor }}
+                  />
+                </div>
+                <p className="text-xs text-gray-500 mt-1">Engajamento {s.label}</p>
+              </div>
+            );
+          })()}
 
           <div className="space-y-3 text-sm">
             <div className="flex items-center text-gray-700">

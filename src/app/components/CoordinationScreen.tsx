@@ -1,11 +1,13 @@
 import { useState, useMemo } from 'react';
-import { Users, Target, Download, ChevronDown, ChevronRight, UserCheck, GitCompare, Megaphone, Trophy, Flame, MapPin } from 'lucide-react';
+import { Users, Target, Download, ChevronDown, ChevronRight, UserCheck, GitCompare, Megaphone, Trophy, Flame, MapPin, Map, TrendingUp, Calendar } from 'lucide-react';
 import { User } from '../lib/auth';
 import { ElectorData } from './CaptureForm';
 import { RegionCompareScreen } from './RegionCompareScreen';
 import { ComunicadoModal } from './ComunicadoModal';
 import { buildRanking, MEDALS } from '../lib/gamification';
+import { avgScore } from '../lib/score';
 import { CheckinMapScreen } from './CheckinMapScreen';
+import { HeatmapScreen } from './HeatmapScreen';
 
 interface Props {
   user: User;
@@ -32,7 +34,7 @@ function exportCSV(rows: Record<string, string | number>[], filename: string) {
 
 export function CoordinationScreen({ user, electors, users, canExport }: Props) {
   const [expanded, setExpanded] = useState<string | null>(null);
-  const [coordTab, setCoordTab] = useState<'equipe' | 'ranking' | 'mapa' | 'comparar'>('equipe');
+  const [coordTab, setCoordTab] = useState<'equipe' | 'ranking' | 'mapa' | 'heatmap' | 'comparar'>('equipe');
   const [showComunicado, setShowComunicado] = useState(false);
 
   const ranking = useMemo(() => buildRanking(users, electors), [users, electors]);
@@ -221,6 +223,17 @@ export function CoordinationScreen({ user, electors, users, canExport }: Props) 
             <MapPin className="w-4 h-4" />
             Mapa
           </button>
+          {(user.role === 'coordenador_geral' || user.role === 'lideranca') && (
+            <button
+              onClick={() => setCoordTab('heatmap')}
+              className={`py-3 px-4 font-medium text-sm border-b-2 transition-colors flex items-center gap-1.5 ${
+                coordTab === 'heatmap' ? 'border-blue-600 text-blue-600' : 'border-transparent text-gray-500'
+              }`}
+            >
+              <Map className="w-4 h-4" />
+              Heatmap
+            </button>
+          )}
           <button
             onClick={() => setCoordTab('comparar')}
             className={`py-3 px-4 font-medium text-sm border-b-2 transition-colors flex items-center gap-1.5 ${
@@ -296,6 +309,13 @@ export function CoordinationScreen({ user, electors, users, canExport }: Props) 
         />
       )}
 
+      {/* Aba Heatmap */}
+      {coordTab === 'heatmap' && (
+        <div className="h-[calc(100vh-220px)]">
+          <HeatmapScreen electors={electors} users={users} />
+        </div>
+      )}
+
       {/* Aba Comparar */}
       {coordTab === 'comparar' && (
         <div className="p-4">
@@ -326,6 +346,26 @@ export function CoordinationScreen({ user, electors, users, canExport }: Props) 
             </p>
             <p className="text-xs text-gray-400">da meta geral</p>
           </div>
+          {(() => {
+            const score = avgScore(electors);
+            const color = score >= 65 ? '#16a34a' : score >= 35 ? '#ca8a04' : '#dc2626';
+            const label = score >= 65 ? 'Alto' : score >= 35 ? 'Médio' : 'Baixo';
+            return (
+              <div className="bg-white rounded-xl shadow p-4 col-span-2">
+                <div className="flex items-center justify-between mb-1">
+                  <div className="flex items-center gap-2">
+                    <TrendingUp className="w-4 h-4" style={{ color }} />
+                    <p className="text-sm text-gray-500">Score médio de engajamento</p>
+                  </div>
+                  <span className="text-xl font-bold" style={{ color }}>{score}/100</span>
+                </div>
+                <div className="w-full bg-gray-200 rounded-full h-2">
+                  <div className="h-2 rounded-full transition-all" style={{ width: `${score}%`, backgroundColor: color }} />
+                </div>
+                <p className="text-xs text-gray-400 mt-1">Engajamento {label} — média de {electors.length} eleitor{electors.length !== 1 ? 'es' : ''}</p>
+              </div>
+            );
+          })()}
         </div>
 
         {canExport && (

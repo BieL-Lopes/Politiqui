@@ -1,6 +1,7 @@
 import { useState } from 'react';
-import { ArrowLeft, Search, Phone, MapPin, Trash2, Download, FileText, FileSpreadsheet, X } from 'lucide-react';
+import { ArrowLeft, Search, Phone, MapPin, Trash2, Download, FileText, FileSpreadsheet, X, TrendingUp } from 'lucide-react';
 import { ElectorData } from './CaptureForm';
+import { computeScore, avgScore } from '../lib/score';
 
 interface ContactListProps {
   contacts: ElectorData[];
@@ -12,12 +13,17 @@ interface ContactListProps {
 export function ContactList({ contacts, onBack, onDelete, onViewProfile }: ContactListProps) {
   const [searchTerm, setSearchTerm] = useState('');
   const [showExportMenu, setShowExportMenu] = useState(false);
+  const [scoreFilter, setScoreFilter] = useState<'todos' | 'alto' | 'medio' | 'baixo'>('todos');
 
-  const filteredContacts = contacts.filter(contact =>
-    contact.nome.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    contact.cidade.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    contact.bairro.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  const filteredContacts = contacts.filter(contact => {
+    const matchText =
+      contact.nome.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      contact.cidade.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      contact.bairro.toLowerCase().includes(searchTerm.toLowerCase());
+    if (!matchText) return false;
+    if (scoreFilter !== 'todos' && computeScore(contact).tier !== scoreFilter) return false;
+    return true;
+  });
 
   const getNivelBadge = (nivel: 'forte' | 'medio' | 'fraco' | 'indeciso' | 'oposicao') => {
     const styles = {
@@ -236,6 +242,32 @@ export function ContactList({ contacts, onBack, onDelete, onViewProfile }: Conta
             placeholder="Buscar por nome, cidade ou bairro..."
           />
         </div>
+
+        {/* Filtro por score */}
+        <div className="flex gap-2 pt-1">
+          {(['todos', 'alto', 'medio', 'baixo'] as const).map(tier => {
+            const active = scoreFilter === tier;
+            const config = {
+              todos: { label: 'Todos', activeStyle: 'bg-white text-blue-700 font-bold' },
+              alto:  { label: `Alto (${contacts.filter(c => computeScore(c).tier === 'alto').length})`,  activeStyle: 'bg-green-500 text-white font-bold' },
+              medio: { label: `Médio (${contacts.filter(c => computeScore(c).tier === 'medio').length})`, activeStyle: 'bg-yellow-400 text-yellow-900 font-bold' },
+              baixo: { label: `Baixo (${contacts.filter(c => computeScore(c).tier === 'baixo').length})`, activeStyle: 'bg-red-500 text-white font-bold' },
+            };
+            return (
+              <button
+                key={tier}
+                onClick={() => setScoreFilter(tier)}
+                className={`flex-1 text-xs py-1.5 rounded-full transition-colors border ${
+                  active
+                    ? config[tier].activeStyle + ' border-transparent'
+                    : 'bg-blue-500 text-blue-100 border-blue-400 hover:bg-blue-400'
+                }`}
+              >
+                {config[tier].label}
+              </button>
+            );
+          })}
+        </div>
       </div>
 
       {/* Lista de Contatos */}
@@ -258,7 +290,21 @@ export function ContactList({ contacts, onBack, onDelete, onViewProfile }: Conta
             >
               <div className="flex justify-between items-start mb-3">
                 <div className="flex-1">
-                  <h3 className="font-bold text-lg text-gray-900 mb-2">{contact.nome}</h3>
+                  <div className="flex items-center gap-2 mb-2">
+                    <h3 className="font-bold text-lg text-gray-900">{contact.nome}</h3>
+                    {(() => {
+                      const s = computeScore(contact);
+                      return (
+                        <span
+                          className="text-xs font-bold px-2 py-0.5 rounded-full text-white shrink-0"
+                          style={{ backgroundColor: s.hexColor }}
+                          title={`Score: ${s.score}/100`}
+                        >
+                          {s.score}
+                        </span>
+                      );
+                    })()}
+                  </div>
                   <div className="flex flex-wrap gap-1 mb-2">
                     {getNivelBadge(contact.nivelVoto)}
                     {getNivelEngajamentoBadge(contact.nivelEngajamento)}
@@ -343,7 +389,7 @@ export function ContactList({ contacts, onBack, onDelete, onViewProfile }: Conta
       {/* Estatísticas Rápidas (acima da bottom nav) */}
       {contacts.length > 0 && (
         <div className="fixed bottom-16 left-0 right-0 bg-white border-t-2 border-gray-200 p-4 shadow-lg">
-          <div className="grid grid-cols-3 gap-2 text-center text-sm">
+          <div className="grid grid-cols-4 gap-2 text-center text-sm">
             <div>
               <p className="text-green-600 font-bold text-xl">
                 {contacts.filter(c => c.nivelVoto === 'forte').length}
@@ -361,6 +407,13 @@ export function ContactList({ contacts, onBack, onDelete, onViewProfile }: Conta
                 {contacts.filter(c => c.nivelVoto === 'fraco').length}
               </p>
               <p className="text-gray-600 text-xs">Fracos</p>
+            </div>
+            <div>
+              <div className="flex items-center justify-center gap-1">
+                <TrendingUp className="w-3.5 h-3.5 text-blue-600" />
+                <p className="text-blue-600 font-bold text-xl">{avgScore(contacts)}</p>
+              </div>
+              <p className="text-gray-600 text-xs">Score médio</p>
             </div>
           </div>
         </div>

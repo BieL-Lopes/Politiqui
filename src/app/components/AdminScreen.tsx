@@ -1,9 +1,10 @@
 import { useState } from 'react';
 import {
   Users, Shield, Settings, ChevronRight, UserPlus, Trash2, Edit2,
-  Download, BarChart2, TrendingUp, Target, Megaphone
+  Download, BarChart2, TrendingUp, Target, Megaphone, Map
 } from 'lucide-react';
 import { ComunicadoModal } from './ComunicadoModal';
+import { HeatmapScreen } from './HeatmapScreen';
 import {
   BarChart, Bar, XAxis, YAxis, Tooltip, PieChart, Pie, Cell,
   LineChart, Line, ResponsiveContainer, CartesianGrid, Legend
@@ -35,7 +36,7 @@ function exportCSV(rows: Record<string, unknown>[], filename: string) {
 
 export function AdminScreen({ user, electors, users, canExport }: Props) {
   const showDashboard = user.role === 'lideranca' || user.role === 'coordenador_geral';
-  const [activeTab, setActiveTab] = useState<'users' | 'dashboard' | 'settings'>(
+  const [activeTab, setActiveTab] = useState<'users' | 'dashboard' | 'mapa' | 'settings'>(
     showDashboard ? 'dashboard' : 'users'
   );
   const [showComunicado, setShowComunicado] = useState(false);
@@ -200,6 +201,17 @@ export function AdminScreen({ user, electors, users, canExport }: Props) {
             >
               <BarChart2 className="w-4 h-4 inline mr-1" />
               Dashboard
+            </button>
+          )}
+          {showDashboard && (
+            <button
+              onClick={() => setActiveTab('mapa')}
+              className={`py-3 px-4 font-medium text-sm border-b-2 transition-colors ${
+                activeTab === 'mapa' ? 'border-blue-600 text-blue-600' : 'border-transparent text-gray-500'
+              }`}
+            >
+              <Map className="w-4 h-4 inline mr-1" />
+              Mapa
             </button>
           )}
           <button
@@ -425,6 +437,13 @@ export function AdminScreen({ user, electors, users, canExport }: Props) {
                   </ResponsiveContainer>
                 </div>              </>
             )}
+          </div>
+        )}
+
+        {/* ── Tab Mapa ── */}
+        {activeTab === 'mapa' && showDashboard && (
+          <div className="h-[calc(100vh-180px)]">
+            <HeatmapScreen electors={electors} users={users} />
           </div>
         )}
 

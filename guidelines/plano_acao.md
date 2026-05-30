@@ -40,8 +40,8 @@
 | Gamificação do captador (ranking, medalhas, streak) | 🔲 ⭐ |
 | Comparativo entre regiões | ✅ |
 | Rota e check-in dos captadores | 🔲 ⭐ |
-| Score eleitoral automático por eleitor | 🔲 ⭐ |
-| Mapa / heatmap eleitoral | 🔲 ⭐ |
+| Score eleitoral automático por eleitor | ✅ |
+| Mapa / heatmap eleitoral | ✅ |
 | IA de campanha (alertas inteligentes) | 🔲 ⭐ |
 | Automação via WhatsApp | 🔲 ⭐ |
 
@@ -236,25 +236,25 @@
 
 ---
 
-#### 9.8 — Heatmap Eleitoral 🔲 ⭐
+#### 9.8 — Heatmap Eleitoral ✅ ⭐
 **Complexidade: Média-Alta** — mapa visual com camadas de dados eleitorais.
 
-- [ ] Mapa mostrando bairros por densidade de eleitores cadastrados
-- [ ] Cor por força: verde (forte), amarelo (médio), vermelho (fraco/abandonado)
-- [ ] Filtro por coordenador, por captador ou por período
-- [ ] Disponível para Liderança e Coordenador Geral
+- [x] Mapa mostrando bairros por densidade de eleitores cadastrados
+- [x] Cor por força: verde (forte), amarelo (médio), vermelho (fraco/abandonado)
+- [x] Filtro por coordenador, por captador ou por período
+- [x] Disponível para Liderança e Coordenador Geral
 
 ---
 
-#### 9.9 — Score Eleitoral Automático por Eleitor 🔲 ⭐
+#### 9.9 — Score Eleitoral Automático por Eleitor ✅ ⭐
 **Complexidade: Alta** — algoritmo de pontuação por comportamento do eleitor.
 
-> Citado como "ouro" no documento de requisitos — transforma o app em CRM político.
+> Citado como “ouro” no documento de requisitos — transforma o app em CRM político.
 
-- [ ] Calcular score com base em: respondeu enquete, foi a evento, atende ligação, compartilha conteúdo
-- [ ] Exibir score no perfil do eleitor e na listagem de contatos
-- [ ] Filtrar eleitores por faixa de score (alto, médio, baixo engajamento)
-- [ ] Coordenador vê score médio da região
+- [x] Calcular score com base em: nível de voto, engajamento, atendimentos registrados, nichos, WhatsApp, observações
+- [x] Exibir score no perfil do eleitor (barra de progresso colorida 0–100)
+- [x] Filtrar eleitores por faixa de score (Alto / Médio / Baixo) na listagem de contatos
+- [x] Coordenador vê score médio da região na aba Equipe
 
 ---
 
